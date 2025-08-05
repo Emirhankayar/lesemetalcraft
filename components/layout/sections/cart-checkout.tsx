@@ -1,56 +1,18 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import { createClient } from "@/lib/sbClient";
+import { supabase } from "@/lib/sbClient";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Trash2, Loader2, ShoppingCart, Minus, Plus } from "lucide-react";
 import Link from "next/link";
 import { AuthAlert } from "@/components/ui/auth-alert";
-
-type CartItem = {
-  cart_item_id: string;
-  product_id: string;
-  product_title: string;
-  product_image: string;
-  variant_id: string;
-  variant_data: {
-    id: string;
-    sku: string;
-    size: string;
-    price: number;
-    stock: number;
-    weight: string;
-    is_default: boolean;
-  };
-  quantity: number;
-  unit_price: number;
-  line_total: number;
-  variant_stock: number;
-  product_in_stock: boolean;
-  added_at: string;
-};
-
-type CartSummary = {
-  subtotal: number;
-  items_count: number;
-  estimated_tax: number;
-  shipping_cost: number;
-  total_quantity: number;
-};
-
-type CartResponse = {
-  total: number;
-  summary: CartSummary;
-  cart_items: CartItem[];
-};
-
+import { CartResponse } from "@/lib/types";
+import Image from "next/image";
 export const CheckoutPage = () => {
-  const supabase = createClient();
   const params = useParams();
   const [cart, setCart] = useState<CartResponse | null>(null);
-  const [fetchTime, setFetchTime] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [itemLoading, setItemLoading] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -87,20 +49,15 @@ export const CheckoutPage = () => {
     setUser(user); 
 
     if (authError || !user) {
-      showAlertMessage("Authentication required");
+      showAlertMessage("Giriş yapmanız gerekmektedir.");
       setLoading(false);
       return;
     }
-
-      const startTime = performance.now();
       const { data, error } = await supabase.rpc("get_user_cart");
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-      setFetchTime(duration.toFixed(2));
       
       if (error) {
         console.error("Cart fetch error:", error);
-        showAlertMessage("Failed to load cart items");
+        showAlertMessage("Sepet ürünleri yüklenemedi.");
       } else {
         setCart(data);
       }
@@ -120,7 +77,7 @@ export const CheckoutPage = () => {
 
       if (error) {
         console.error("Remove error:", error);
-        showAlertMessage("Failed to remove item from cart");
+        showAlertMessage("Ürün sepetten kaldırılamadı.");
         return;
       }
 
@@ -150,10 +107,10 @@ export const CheckoutPage = () => {
         };
       });
 
-      showAlertMessage("Item removed from cart");
+      showAlertMessage("Ürün sepetten kaldırıldı.");
     } catch (err) {
       console.error("Unexpected error:", err);
-      showAlertMessage("An unexpected error occurred");
+      showAlertMessage("Beklenmeyen bir hata oluştu.");
     } finally {
       setItemLoading(null);
     }
@@ -172,7 +129,7 @@ export const CheckoutPage = () => {
 
       if (error) {
         console.error("Update quantity error:", error);
-        showAlertMessage("Failed to update quantity");
+        showAlertMessage("Adet güncellenemedi.");
         return;
       }
 
@@ -207,10 +164,10 @@ export const CheckoutPage = () => {
         };
       });
 
-      showAlertMessage("Quantity updated");
+      showAlertMessage("Adet güncellendi.");
     } catch (err) {
       console.error("Unexpected error:", err);
-      showAlertMessage("An unexpected error occurred");
+      showAlertMessage("Beklenmeyen bir hata oluştu.");
     } finally {
       setItemLoading(null);
     }
@@ -218,7 +175,7 @@ export const CheckoutPage = () => {
 
   const handleCreateOrder = async () => {
     if (!cart || cart.cart_items.length === 0) {
-      showAlertMessage("Your cart is empty");
+      showAlertMessage("Sepetiniz boş.");
       return;
     }
 
@@ -229,7 +186,7 @@ export const CheckoutPage = () => {
 
       if (error) {
         console.error("Order creation error:", error);
-        showAlertMessage("Failed to create order");
+        showAlertMessage("Sipariş oluşturulamadı.");
         return;
       }
 
@@ -239,7 +196,7 @@ export const CheckoutPage = () => {
       }
 
       if (data.success) {
-        showAlertMessage(`Order created successfully! Order ID: ${data.order_id.slice(0, 8)}`);
+        showAlertMessage(`Sipariş başarıyla oluşturuldu! Sipariş No: ${data.order_id.slice(0, 8)}`);
         
         setCart({
           cart_items: [],
@@ -258,7 +215,7 @@ export const CheckoutPage = () => {
       }
     } catch (err) {
       console.error("Unexpected error during checkout:", err);
-      showAlertMessage("An unexpected error occurred during checkout");
+      showAlertMessage("Sipariş sırasında beklenmeyen bir hata oluştu.");
     } finally {
       setCheckoutLoading(false);
     }
@@ -268,12 +225,12 @@ export const CheckoutPage = () => {
     return (
       <section className="container flex flex-col items-center justify-center mx-auto max-w-6xl min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin" />
-        <p className="mt-4 text-muted-foreground">Loading your cart...</p>
+        <p className="mt-4 text-muted-foreground">Sepetiniz yükleniyor...</p>
       </section>
     );
   }
   if (!user) {
-    return <AuthAlert icon={<ShoppingCart/>} description="Please log in to view your shopping cart." />;
+    return <AuthAlert icon={<ShoppingCart/>} description="Alışveriş sepetinizi görüntülemek için lütfen giriş yapın." />;
   }
   if (!cart || cart.cart_items.length === 0 || !user) {
     return (
@@ -282,15 +239,15 @@ export const CheckoutPage = () => {
           <AlertDescription>
             <div className="flex flex-col justify-center w-full items-center space-y-4">
               <ShoppingCart className="h-16 w-16 text-muted-foreground" />
-              <h3 className="text-xl font-semibold">Your cart is empty</h3>
+              <h3 className="text-xl font-semibold">Sepetiniz boş</h3>
               <p className="text-muted-foreground max-w-md">
-                Discover amazing products and add them to your cart to get started with your shopping experience.
+                Harika ürünleri keşfedin ve alışverişe başlamak için sepetinize ekleyin.
               </p>
-                              <Link href="/magaza?page=1&limit=10">
-              <Button className="mt-4">
-                Continue Shopping
-              </Button>
-                              </Link>
+              <Link href="/magaza?page=1&limit=12">
+                <Button className="mt-4">
+                  Alışverişe Devam Et
+                </Button>
+              </Link>
             </div>
           </AlertDescription>
         </Alert>
@@ -304,10 +261,10 @@ export const CheckoutPage = () => {
       {alertMessage && (
         <div
           className={`
-            fixed left-1/2 top-20 z-50
+            fixed left-1/2 bottom-8 z-50
             transform -translate-x-1/2
             transition-all duration-300 ease-in-out
-            ${showAlert ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}
+            ${showAlert ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}
             w-full max-w-md px-4
           `}
         >
@@ -321,9 +278,9 @@ export const CheckoutPage = () => {
 
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">Shopping Cart</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2">Alışveriş Sepeti</h1>
         <p className="text-muted-foreground">
-          {cart.summary.items_count} {cart.summary.items_count === 1 ? 'item' : 'items'} in your cart
+          {cart.summary.items_count} ürün sepetinizde
         </p>
       </div>
 
@@ -336,27 +293,32 @@ export const CheckoutPage = () => {
                 <div className="flex flex-col sm:flex-row">
                   {/* Product Image */}
                   <div className="sm:w-32 sm:h-32 w-full h-48 relative overflow-hidden">
-                    <img
+                                          <Link href={`/magaza/${item.product_id}`}>
+
+                    <Image
                       src={item.product_image || "/placeholder-product.jpg"}
                       alt={item.product_title}
+                      width={96}
+                      height={96}
                       className="w-full h-full object-cover"
-                    />
+                      />
+                      </Link>
                   </div>
 
                   {/* Product Details */}
                   <div className="flex-1 p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                        <h3 className="font-semibold text-lg mb-2 line-clamp-2" itemProp="name">
                           {item.product_title}
                         </h3>
                         
                         <div className="space-y-1 text-sm text-muted-foreground mb-3">
-                          <p>Size: {item.variant_data.size}</p>
+                          <p>Varyete: {item.variant_data.size}</p>
                           <p>SKU: {item.variant_data.sku}</p>
                           {item.variant_stock <= 5 && (
                             <p className="text-amber-600 font-medium">
-                              Only {item.variant_stock} left in stock
+                              Sadece {item.variant_stock} adet kaldı!
                             </p>
                           )}
                         </div>
@@ -370,11 +332,12 @@ export const CheckoutPage = () => {
                               onClick={() => handleUpdateQuantity(item.cart_item_id, item.quantity - 1)}
                               disabled={item.quantity <= 1 || itemLoading === item.cart_item_id}
                               className="h-8 w-8 p-0"
+                              aria-label="Adet Azalt"
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
                             
-                            <span className="font-medium min-w-8 text-center">
+                            <span className="font-medium min-w-8 text-center" aria-label="Adet">
                               {item.quantity}
                             </span>
                             
@@ -384,6 +347,7 @@ export const CheckoutPage = () => {
                               onClick={() => handleUpdateQuantity(item.cart_item_id, item.quantity + 1)}
                               disabled={item.quantity >= item.variant_stock || itemLoading === item.cart_item_id}
                               className="h-8 w-8 p-0"
+                              aria-label="Adet Arttır"
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -396,13 +360,14 @@ export const CheckoutPage = () => {
                             onClick={() => handleRemove(item.cart_item_id)}
                             disabled={itemLoading === item.cart_item_id}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            aria-label="Sepetten Kaldır"
                           >
                             {itemLoading === item.cart_item_id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <>
                                 <Trash2 className="h-4 w-4 sm:mr-2" />
-                                <span className="hidden sm:inline">Remove</span>
+                                <span className="hidden sm:inline">Kaldır</span>
                               </>
                             )}
                           </Button>
@@ -411,11 +376,11 @@ export const CheckoutPage = () => {
 
                       {/* Price Section */}
                       <div className="text-right sm:ml-4">
-                        <div className="text-lg font-bold">
+                        <div className="text-lg font-bold" aria-label="Toplam Fiyat">
                           {item.line_total.toFixed(2)} ₺
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {item.unit_price.toFixed(2)} ₺ each
+                        <div className="text-sm text-muted-foreground" aria-label="Birim Fiyat">
+                          {item.unit_price.toFixed(2)} ₺ / adet
                         </div>
                       </div>
                     </div>
@@ -430,24 +395,24 @@ export const CheckoutPage = () => {
         <div className="lg:col-span-1">
           <Card className="sticky top-4">
             <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+              <CardTitle>Sipariş Özeti</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal ({cart.summary.items_count} items)</span>
+                <span className="text-muted-foreground">Ara Toplam ({cart.summary.items_count} ürün)</span>
                 <span>{cart.summary.subtotal.toFixed(2)} ₺</span>
               </div>
               
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Estimated Tax</span>
+                <span className="text-muted-foreground">KDV (20%)</span>
                 <span>{cart.summary.estimated_tax.toFixed(2)} ₺</span>
               </div>
               
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Shipping</span>
+                <span className="text-muted-foreground">Kargo</span>
                 <span>
                   {cart.summary.shipping_cost === 0 ? (
-                    <span className="text-green-600 font-medium">FREE</span>
+                    <span className="text-green-600 font-medium">ÜCRETSİZ</span>
                   ) : (
                     `${cart.summary.shipping_cost.toFixed(2)} ₺`
                   )}
@@ -456,31 +421,26 @@ export const CheckoutPage = () => {
 
               {cart.summary.subtotal < 50 && cart.summary.shipping_cost > 0 && (
                 <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
-                  💡 Add {(50 - cart.summary.subtotal).toFixed(2)} ₺ more for free shipping!
+                  💡 Ücretsiz kargo için {(50 - cart.summary.subtotal).toFixed(2)} ₺ daha ekleyin!
                 </div>
               )}
               
               <hr />
               
               <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
+                <span>Toplam</span>
                 <span>{cart.total.toFixed(2)} ₺</span>
               </div>
 
               <div className="text-xs text-muted-foreground space-y-1">
                 <div className="flex justify-between">
-                  <span>Total Items:</span>
+                  <span>Toplam Ürün:</span>
                   <span>{cart.summary.items_count}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Total Quantity:</span>
+                  <span>Toplam Adet:</span>
                   <span>{cart.summary.total_quantity}</span>
                 </div>
-                {fetchTime && (
-                  <div className="text-right">
-                    Loaded in {fetchTime}ms
-                  </div>
-                )}
               </div>
             </CardContent>
             
@@ -490,21 +450,22 @@ export const CheckoutPage = () => {
                 className="w-full"
                 onClick={handleCreateOrder}
                 disabled={checkoutLoading || !cart || cart.cart_items.length === 0}
+                aria-label="Siparişi Tamamla"
               >
                 {checkoutLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating Order...
+                    Sipariş Oluşturuluyor...
                   </>
                 ) : (
-                  "Proceed to Checkout"
+                  "Siparişi Tamamla"
                 )}
               </Button>
-                <Link href="/magaza?page=1&limit=10">
-              <Button variant="outline" size="sm" className="w-full">
-                Continue Shopping
-              </Button>
-                </Link>
+              <Link href="/magaza?page=1&limit=12">
+                <Button variant="outline" size="sm" className="w-full" aria-label="Alışverişe Devam Et">
+                  Alışverişe Devam Et
+                </Button>
+              </Link>
             </CardFooter>
           </Card>
         </div>

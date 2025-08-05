@@ -52,8 +52,7 @@ const featureList: FeaturesProps[] = [
 
 export const FeaturesSection = () => {
   return (
-    <section id="services" className="container mx-auto py-24 sm:py-32">
-
+    <section id="services" className="container py-24 sm:py-32 mx-auto">
       <h2 className="text-3xl md:text-4xl text-center font-bold mb-4">
         Hizmetlerimiz
       </h2>
@@ -66,24 +65,24 @@ export const FeaturesSection = () => {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {featureList.map(({ icon, title, description }) => (
           <div key={title}>
-            <Card className="h-full bg-background border-0 shadow-none">
-              <CardHeader className="flex justify-center items-center">
-                <div className="bg-primary/20 p-2 rounded-full ring-8 ring-primary/10 mb-4">
-                  <Icon
-                    name={icon as keyof typeof icons}
-                    size={24}
-                    color="hsl(var(--primary))"
-                    className="text-primary"
-                  />
-                </div>
+<Card className="h-full bg-background border-0 shadow-none flex flex-col items-center text-center p-6">
+  <CardHeader className="flex flex-col items-center gap-4 mb-4">
+    <div className="bg-primary/20 w-12 h-12 rounded-full flex items-center justify-center ring-8 ring-primary/10">
+      <Icon
+        name={icon as keyof typeof icons}
+        color="currentColor"
+        size={32}
+        className="text-primary"
+      />
+    </div>
+    <CardTitle>{title}</CardTitle>
+  </CardHeader>
 
-                <CardTitle>{title}</CardTitle>
-              </CardHeader>
+  <CardContent className="text-muted-foreground">
+    {description}
+  </CardContent>
+</Card>
 
-              <CardContent className="text-muted-foreground text-center">
-                {description}
-              </CardContent>
-            </Card>
           </div>
         ))}
       </div>

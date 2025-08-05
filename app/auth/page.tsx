@@ -1,4 +1,5 @@
 import AuthSection from "@/components/layout/sections/auth";
+
 export const metadata = {
   title: "Giriş Yap - LESE Metalcraft",
   description: "LESE Metalcraft hesabınıza giriş yapın. Özel fiyatlar ve hızlı sipariş imkanlarından yararlanın.",
@@ -16,8 +17,12 @@ export const metadata = {
       },
     ],
   },
-
 };
+
 export default function AuthPage() {
-  return <AuthSection />;
+  return (
+    <main className="min-h-screen bg-background">
+      <AuthSection />
+    </main>
+  );
 }

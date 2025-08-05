@@ -95,7 +95,7 @@ export const PaginationControls = ({
     }
   };
 
-  return (
+return (
     <div className="space-y-4 mb-12">
       {/* Results summary */}
       <div className="flex flex-col-2 items-center justify-between gap-4 py-4 border-t">
@@ -103,11 +103,11 @@ export const PaginationControls = ({
           <span className="font-medium">
             {showingFrom}-{showingTo}
           </span>{" "}
-          /{totalItems.toLocaleString()} results
+          /{totalItems.toLocaleString()} sonuç
         </div>
         
         <div className="flex items-center gap-2 text-sm">
-          <span>Show:</span>
+          <span>Göster:</span>
           <Select 
             value={pageSize.toString()} 
             onValueChange={onPageSizeChange} 
@@ -117,10 +117,10 @@ export const PaginationControls = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="12">12</SelectItem>
+              <SelectItem value="24">24</SelectItem>
+              <SelectItem value="36">36</SelectItem>
+              <SelectItem value="64">64</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -149,7 +149,7 @@ export const PaginationControls = ({
         onClick={() => handleEllipsisClick(page.target)}
         disabled={loading}
         className="px-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-        title={`Jump to ${page.target === 'last' ? 'last' : 'first'} page`}
+        title={`Son sayfaya atla`}
       >
         ...
       </button>

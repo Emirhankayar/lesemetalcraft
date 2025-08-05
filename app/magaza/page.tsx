@@ -2,12 +2,13 @@ import { ProductList } from "@/components/layout/sections/product-list";
 import { Metadata } from "next";
 
 type Props = {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const page = searchParams.page ? parseInt(searchParams.page as string) : 1;
-  const limit = searchParams.limit ? parseInt(searchParams.limit as string) : 10;
+  const params = await searchParams;
+  const page = params.page ? parseInt(params.page as string) : 1;
+  const limit = params.limit ? parseInt(params.limit as string) : 10;
   
   const baseTitle = "Mağaza - LESE Metalcraft";
   const baseDescription = "LESE Metalcraft ürün kataloğu. Hassas metal işleme parçaları, özel üretim çözümleri ve endüstriyel ürünler.";
@@ -23,8 +24,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const baseUrl = "https://lesemetalcraft.com/magaza";
   const searchParamsString = new URLSearchParams();
   
-  if (page > 1) searchParamsString.set('page', page.toString());
-  if (limit !== 10) searchParamsString.set('limit', limit.toString());
+  if (page > 1) searchParamsString.set("page", page.toString());
+  if (limit !== 10) searchParamsString.set("limit", limit.toString());
   
   const canonicalUrl = searchParamsString.toString() 
     ? `${baseUrl}?${searchParamsString.toString()}`
@@ -64,15 +65,16 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       googleBot: {
         index: true,
         follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
       },
     },
   };
 }
 
-export default function Shop({ searchParams }: Props) {
+export default async function ProductListPage({ searchParams }: Props) {
+  const params = await searchParams;
   return (
     <>
       <ProductList />

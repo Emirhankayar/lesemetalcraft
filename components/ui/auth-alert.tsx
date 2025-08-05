@@ -12,7 +12,7 @@ type AuthAlertProps = {
 };
 
 export function AuthAlert({
-  description = "Please log in to view your shopping cart.",
+  description = "Alışveriş sepetinizi görüntülemek için lütfen giriş yapın.",
   buttonText = "Giriş Yap",
   buttonHref = "/auth",
   icon,
@@ -35,7 +35,7 @@ export function AuthAlert({
         <AlertDescription className="text-center flex flex-col justify-center items-center py-8">
           {iconElement}
           <h3 className="text-xl font-semibold mb-2">
-            - Authentication Required -
+            - Giriş Gereklidir -
           </h3>
           <p className="text-muted-foreground">{description}</p>
           <Link href={buttonHref}>

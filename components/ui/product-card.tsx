@@ -37,7 +37,7 @@ export const ProductCard = ({ product, userAuthenticated }: ProductCardProps) =>
       {/* Featured Badge */}
       {product.featured && (
         <Badge className="absolute top-3 left-3 bg-yellow-500 hover:bg-yellow-600">
-          Featured
+          Öne Çıkan
         </Badge>
       )}
 
@@ -58,15 +58,15 @@ export const ProductCard = ({ product, userAuthenticated }: ProductCardProps) =>
               className="text-red-500 border-red-200"
             >
               <Heart className="h-3 w-3 mr-1 fill-current" />
-              Liked
+              Beğenildi
             </Badge>
           )}
-          {product.user_cart_quantity > 0 && (
-            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-              <ShoppingCart className="h-3 w-3 mr-1" />
-              In Cart: {product.user_cart_quantity}
-            </Badge>
-          )}
+        {product.user_cart_quantity && product.user_cart_quantity > 0 && (
+          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+            <ShoppingCart className="h-3 w-3 mr-1" />
+            Sepette: {product.user_cart_quantity}
+          </Badge>
+        )}
         </div>
       )}
     </div>
@@ -91,7 +91,7 @@ export const ProductCard = ({ product, userAuthenticated }: ProductCardProps) =>
             </span>
           </div>
           <span className="text-sm text-muted-foreground">
-            ({product.ratings_count} reviews)
+            ({product.ratings_count} yorum)
           </span>
         </div>
       )}
@@ -140,7 +140,7 @@ export const ProductCard = ({ product, userAuthenticated }: ProductCardProps) =>
       <Link href={`/magaza/${product.id}`} className="w-full">
         <Button className="w-full group-hover:bg-primary/90 transition-colors">
           <Eye className="h-4 w-4 mr-2" />
-          View Details
+          Detayları Gör
         </Button>
       </Link>
     </CardFooter>

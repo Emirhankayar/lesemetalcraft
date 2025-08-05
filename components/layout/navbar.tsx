@@ -1,10 +1,10 @@
 "use client";
-import { Menu, Store, ShoppingCart, LogOut, User as UserIcon, Send, CircleCheckBig, HelpCircle, Home } from "lucide-react";
+import { Menu, Store, ShoppingCart, LogOut, LogIn, User as UserIcon, Send, CircleCheckBig, HelpCircle, Home } from "lucide-react";
 import leseicon from "../icons/g14.svg";
 import React, { useEffect, useState } from 'react';
-import { createClient } from "@/lib/sbClient";
+import { supabase } from "@/lib/sbClient";
 import type { User } from '@supabase/supabase-js';
-
+import { Loader2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -31,7 +31,7 @@ const routeList: { href: string; label: string; icon?: React.ReactNode }[] = [
   { href: "/#about", label: "Hakkımızda", icon: <HelpCircle className="w-4 h-4" /> },
   { href: "/#services", label: "Hizmetlerimiz", icon: <CircleCheckBig className="w-4 h-4" /> },
   { href: "/#contact", label: "İletişim", icon: <Send className="w-4 h-4" /> },
-  { href: "/magaza?page=1&limit=10", label: "Mağaza", icon: <Store className="w-4 h-4" /> },
+  { href: "/magaza?page=1&limit=12", label: "Mağaza", icon: <Store className="w-4 h-4" /> },
   { href: "/sepet", label: "Sepet", icon: <ShoppingCart className="w-4 h-4" /> },
   { href: "/profil", label: "Profil", icon: <UserIcon className="w-4 h-4" /> },
 ];
@@ -40,13 +40,23 @@ export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Failed to get initial session:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+        setIsInitialized(true);
+      }
     };
 
     getInitialSession();
@@ -54,35 +64,94 @@ export const Navbar = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
       setUser(session?.user ?? null);
       setLoading(false);
+      if (!isInitialized) {
+        setIsInitialized(true);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isInitialized]);
 
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/auth";
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+      } else {
+        window.location.href = "/auth";
+      }
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (loading) {
-    return (
-    <header className="shadow-inner bg-opacity-15 w-[90%] md:w-[70%] lg:w-[75%] lg:max-w-screen-xl top-5 mx-auto sticky border border-secondary z-40 rounded-2xl flex justify-between items-center p-2 bg-card">
-        <Link href="/" className="font-bold text-lg flex items-center">
-          <Image src={leseicon} alt="LESE logo" width={80} height={80} className="ml-4"/>
-        </Link>
-        {/* Render auth buttons immediately while loading */}
-        <div className="hidden lg:flex">
-          <ToggleTheme />
+  const renderAuthContent = () => {
+    if (!isInitialized || loading) {
+      return (
+        <div className="hidden lg:block">
+          <div className="flex items-center 
+                          justify-center animate-pulse 
+                          bg-transparent 
+                          outline-[1px] h-8 w-26 rounded-md">
+          <Loader2 className="size-5 text-gray-500 hover:text-gray-900 transition-colors animate-spin" />
+          </div>
         </div>
-      </header>
+      );
+    }
+
+    return user ? (
+      <div className="hidden lg:block">
+        <Button onClick={handleSignOut} variant="outline" className="text-xs justify-start" disabled={loading}>
+          <LogOut className="size-5 text-red-500 hover:text-red-700 transition-colors" />
+          {loading ? "Çıkış yapılıyor..." : "Çıkış Yap"}
+        </Button>
+      </div>
+    ) : (
+      <div className="hidden lg:block">
+        <Link href="/auth">
+          <Button variant="outline" className="text-xs justify-start" disabled={loading}>
+            <LogIn className="size-5 text-blue-500 hover:text-blue-700 transition-colors" />
+          {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+          </Button>
+        </Link>
+      </div>
+    );
+  };
+
+const renderMobileAuthContent = () => {
+  if (!isInitialized || loading) {
+    return (
+      <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-full rounded mx-4"></div>
     );
   }
 
+  return user ? (
+    <div className="mx-4">
+      <Button onClick={handleSignOut} variant="outline" className="text-xs justify-start w-full" disabled={loading}>
+        <LogOut className="size-5 text-red-500 hover:text-red-700 transition-colors mr-2" />
+        {loading ? "Çıkış yapılıyor..." : "Çıkış Yap"}
+      </Button>
+    </div>
+  ) : (
+    <div className="mx-4">
+      <Link href="/auth" className="w-full">
+        <Button variant="outline" className="text-xs justify-start w-full" disabled={loading}>
+          <LogIn className="size-5 text-blue-500 hover:text-blue-700 transition-colors mr-2" />
+          {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+        </Button>
+      </Link>
+    </div>
+  );
+};
+
   return (
-    <header className="shadow-inner bg-opacity-15 w-[90%] md:w-[70%] lg:w-[75%] lg:max-w-screen-xl top-5 mx-auto sticky border border-secondary z-40 rounded-2xl flex justify-between items-center p-2 bg-card">
+    <header className="shadow-inner bg-opacity-15 w-[90%] md:w-[70%] lg:w-[75%] lg:max-w-screen-xl h-16 top-5 mx-auto sticky border border-secondary z-40 rounded-2xl flex justify-between items-center p-2 bg-card">
       <Link href="/" className="font-bold text-lg flex items-center">
         <Image src={leseicon} alt="LESE logo" width={80} height={80} className="ml-4"/>
       </Link>
@@ -91,7 +160,7 @@ export const Navbar = () => {
       <div className="flex items-center lg:hidden">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
-            <Menu onClick={() => setIsOpen(!isOpen)} className="cursor-pointer lg:hidden" />
+            <Menu onClick={() => setIsOpen(!isOpen)} className="cursor-pointer lg:hidden mx-4" />
           </SheetTrigger>
           <SheetContent side="left" className="flex flex-col justify-between rounded-tr-2xl rounded-br-2xl bg-card border-secondary">
             <div>
@@ -102,8 +171,8 @@ export const Navbar = () => {
                   </Link>
                 </SheetTitle>
               </SheetHeader>
-              <div className="flex flex-col gap-2">
-                {user && (
+              <div className="flex flex-col gap-2 mx-4">
+                {isInitialized && user && (
                   <div className="px-4 py-4 border-b border-gray-300 text-md">
                     {user.email}
                   </div>
@@ -123,18 +192,8 @@ export const Navbar = () => {
                   </Button>
                 ))}
                 
-                {/* Auth buttons */}
-                {user ? (
-                  <Button onClick={handleSignOut} variant="ghost" className="text-base justify-start gap-2">
-                    <LogOut className="w-4 h-4 text-red-500 hover:text-red-700 transition-colors" /> Çıkış Yap
-                  </Button>
-                ) : (
-                  <Button onClick={() => setIsOpen(false)} asChild variant="outline"
-                    style={{ backgroundColor: "#3235d1", color: "white", borderColor: "#3235d1" }}
-                    className="text-base hover:opacity-90 transition">
-                    <Link href="/auth">Giriş Yap</Link>
-                  </Button>
-                )}
+                {/* Mobile Auth buttons */}
+                {renderMobileAuthContent()}
               </div>
             </div>
             <SheetFooter className="flex-col justify-start items-start">
@@ -191,33 +250,13 @@ export const Navbar = () => {
               </Button>
             </NavigationMenuItem>
           ))}
-
-          {/* Auth buttons */}
-          {user ? (
-            <NavigationMenuItem>
-              <Button onClick={handleSignOut} variant="ghost" className="text-base justify-start">
-                <LogOut className="w-4 h-4 text-red-500 hover:text-red-700 transition-colors" />
-              </Button>
-            </NavigationMenuItem>
-          ) : (
-            <NavigationMenuItem>
-              <NavigationMenuLink asChild>
-                <Link href="/auth" className="text-base px-2">
-                  <Button
-                    variant="outline"
-                    style={{ backgroundColor: "#3235d1", color: "white", borderColor: "#3235d1" }}
-                    className="text-base hover:opacity-90 transition"
-                  >
-                    Giriş Yap
-                  </Button>
-                </Link>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-          )}
         </NavigationMenuList>
       </NavigationMenu>
 
-      <div className="hidden lg:flex">
+      {/* Desktop Auth buttons */}
+      {renderAuthContent()}
+
+      <div className="hidden lg:flex ml-4">
         <ToggleTheme />
       </div>
     </header>

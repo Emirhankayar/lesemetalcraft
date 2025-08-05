@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { ProductDetailSection } from "@/components/layout/sections/product-detail";
 import { supabase } from "@/lib/sbClient";
 
@@ -44,24 +45,29 @@ const createProductMetadata = (productName: string, productDescription: string, 
     alternates: {
       canonical: url,
     },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
+robots: {
+  index: true,
+  follow: true,
+  googleBot: {
+    index: true,
+    follow: true,
+    maxVideoPreview: -1,
+    maxImagePreview: "large", 
+    maxSnippet: -1,
+  },
+},
+
   };
 };
 
-export async function generateMetadata({ params }: { params: { productId: string } }) {
+export async function generateMetadata(
+  { params }: { params: Promise<{ productId: string }> }
+): Promise<Metadata> {
+  const resolvedParams = await params;
+
   try {
     const { data } = await supabase.rpc('get_product_with_details', {
-      product_uuid: params.productId,
+      product_uuid: resolvedParams.productId,
       user_uuid: null,
       comments_limit: 0
     });
@@ -70,18 +76,17 @@ export async function generateMetadata({ params }: { params: { productId: string
       return createProductMetadata(
         data.product.name,
         data.product.description,
-        params.productId
+        resolvedParams.productId
       );
     }
   } catch (error) {
     console.error('Error fetching product for metadata:', error);
   }
 
-  // Fallback metadata
   return createProductMetadata(
     "Ürün Detayı",
     "LESE Metalcraft kaliteli metal işleme ürünleri ve özel üretim çözümleri",
-    params.productId
+    resolvedParams.productId
   );
 }
 

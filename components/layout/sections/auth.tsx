@@ -1,13 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/sbClient";
+import { supabase } from "@/lib/sbClient";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { BrandingSlideComponent } from "@/components/layout/sections/branding-slide";
 
 export default function AuthSection() {
-  const supabase = createClient();
   const router = useRouter();
   const [redirectTo, setRedirectTo] = useState<string | undefined>(undefined);
 
@@ -31,7 +30,7 @@ export default function AuthSection() {
     };
   }, [supabase, router]);
   return (
-      <div className="container flex items-center justify-center mx-auto px-4 py-24 max-w-6xl">
+      <section className="container flex items-center justify-center mx-auto px-4 py-24 max-w-6xl">
       <div className="w-full max-w-md shadow-xl p-6 rounded-lg border bg-card text-card-foreground outline">
         {redirectTo && (
           <Auth
@@ -104,6 +103,14 @@ export default function AuthSection() {
                 colors: {
                   brand: "hsl(var(--primary))",         
                   brandAccent: "hsl(var(--primary))",   
+                  inputBackground: "hsl(var(--background))",
+                  inputText: "hsl(var(--foreground))",
+                  inputBorder: "hsl(var(--border))",
+                  inputBorderFocus: "hsl(var(--primary))",
+                  inputBorderHover: "hsl(var(--primary))",
+                  
+                  
+                  
                 },
               },
             },
@@ -114,6 +121,6 @@ export default function AuthSection() {
         )}
         <BrandingSlideComponent />
       </div>
-    </div>
+    </section>
   );
 }

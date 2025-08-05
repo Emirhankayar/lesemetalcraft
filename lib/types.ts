@@ -1,4 +1,5 @@
 export type Product = {
+  id?: string;
   title: string;
   description: string;
   category: string[];
@@ -12,6 +13,7 @@ export type Product = {
   user_cart_quantity?: number;
   user_has_liked?: boolean;
   user_rating?: number;
+  min_price?: number;
 };
 
 export interface ProductCardProps {
@@ -135,3 +137,12 @@ export interface PaginationControlsProps {
   onPageSizeChange: (size: string) => void;
   onPageJump?: (pageNumber: number) => void;
 }
+
+export type CartSummary = {
+  subtotal: number;
+  items_count: number;
+  estimated_tax: number;
+  shipping_cost: number;
+  total_quantity: number;
+};
+

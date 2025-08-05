@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { createClient } from "@/lib/sbClient";
+import { supabase } from "@/lib/sbClient";
 import {
   Card,
   CardContent,
@@ -36,8 +36,6 @@ import { UserProfile, CartResponse } from "@/lib/types"
 import { avatarOptions } from "@/lib/arrays";
 
 export const ProfileSection = () => {
-  const supabase = createClient();
-
   const [userDetail, setUserDetail] = useState<UserProfile | null>(null);
   const [cartData, setCartData] = useState<CartResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -91,7 +89,7 @@ export const ProfileSection = () => {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        showAlertMessage("Authentication required");
+        showAlertMessage("Giriş yapmanız gerekmektedir.");
         return;
       }
 
@@ -99,7 +97,7 @@ export const ProfileSection = () => {
 
       if (error) {
         console.error("Profile fetch error:", error);
-        showAlertMessage("Failed to load profile");
+        showAlertMessage("Profil yüklenemedi.");
         return;
       }
 
@@ -111,7 +109,7 @@ export const ProfileSection = () => {
       });
     } catch (err) {
       console.error("Unexpected error:", err);
-      showAlertMessage("An unexpected error occurred");
+      showAlertMessage("Beklenmeyen bir hata oluştu.");
     } finally {
       setLoading(false);
     }
@@ -148,17 +146,17 @@ export const ProfileSection = () => {
 
       if (error) {
         console.error("Update error:", error);
-        showAlertMessage("Failed to update profile");
+        showAlertMessage("Profil güncellenemedi.");
         return;
       }
 
       await fetchUserProfile();
       setIsEditing(false);
       setShowAvatarSelector(false);
-      showAlertMessage("Profile updated successfully");
+      showAlertMessage("Profil başarıyla güncellendi.");
     } catch (err) {
       console.error("Update error:", err);
-      showAlertMessage("Failed to update profile");
+      showAlertMessage("Profil güncellenemedi.");
     } finally {
       setLoading(false);
     }
@@ -167,7 +165,7 @@ export const ProfileSection = () => {
   const handleSelectAvatar = (avatarUrl: string) => {
     setEditForm((prev) => ({ ...prev, avatar_url: avatarUrl }));
     setShowAvatarSelector(false);
-    showAlertMessage("Avatar selected! Don't forget to save changes.");
+    showAlertMessage("Avatar seçildi! Değişiklikleri kaydetmeyi unutmayın.");
   };
 
   const handleRemoveFromCart = async (cart_item_id: string) => {
@@ -181,16 +179,16 @@ export const ProfileSection = () => {
 
       if (error) {
         console.error("Remove error:", error);
-        showAlertMessage("Failed to remove item");
+        showAlertMessage("Ürün sepetten kaldırılamadı.");
         return;
       }
 
       await fetchCartData();
       await fetchUserProfile();
-      showAlertMessage("Item removed from cart");
+      showAlertMessage("Ürün sepetten kaldırıldı.");
     } catch (err) {
       console.error("Remove error:", err);
-      showAlertMessage("Failed to remove item");
+      showAlertMessage("Ürün sepetten kaldırılamadı.");
     } finally {
       setItemLoading(null);
     }
@@ -212,16 +210,16 @@ export const ProfileSection = () => {
 
       if (error) {
         console.error("Update error:", error);
-        showAlertMessage("Failed to update quantity");
+        showAlertMessage("Adet güncellenemedi.");
         return;
       }
 
       await fetchCartData();
       await fetchUserProfile();
-      showAlertMessage("Quantity updated");
+      showAlertMessage("Adet güncellendi.");
     } catch (err) {
       console.error("Update error:", err);
-      showAlertMessage("Failed to update quantity");
+      showAlertMessage("Adet güncellenemedi.");
     } finally {
       setItemLoading(null);
     }
@@ -243,7 +241,7 @@ export const ProfileSection = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("tr-TR", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -254,36 +252,54 @@ export const ProfileSection = () => {
     return (
       <section className="container flex flex-col items-center justify-center mx-auto max-w-6xl min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin" />
-        <p className="mt-4 text-muted-foreground">Loading your profile...</p>
+        <p className="mt-4 text-muted-foreground">Profiliniz yükleniyor...</p>
       </section>
     );
   }
 
-  if (!userDetail) {return <AuthAlert icon={<User/>} description="Please log in to view your profile." />}
+  if (!userDetail) {
+    return (
+      <AuthAlert
+        icon={<User />}
+        description="Profilinizi görüntülemek için lütfen giriş yapın."
+      />
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl">
       {/* Alert Message */}
       {alertMessage && (
-        <div
-          className={`
-            fixed left-1/2 top-20 z-50
-            transform -translate-x-1/2
-            transition-all duration-300 ease-in-out
-            ${
-              showAlert
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 -translate-y-2"
-            }
-            w-full max-w-md px-4
-          `}
-        >
-          <Alert className="shadow-lg border-2">
-            <AlertDescription className="text-center font-medium">
-              {alertMessage}
-            </AlertDescription>
-          </Alert>
-        </div>
+<div
+  className={`
+    fixed left-1/2 bottom-8 z-50
+    transform -translate-x-1/2
+    transition-all duration-300 ease-in-out
+    ${
+      showAlert
+        ? "opacity-100 translate-y-0"
+        : "opacity-0 translate-y-2"
+    }
+    w-full max-w-md px-4
+  `}
+  role="alert"
+  aria-live="assertive"
+>
+  <Alert
+    className={`
+      shadow-lg
+      text-center
+      ${showAlert ? "animate-fade-in" : "animate-fade-out"}
+    `}
+    style={{
+      borderRadius: "0.75rem",
+    }}
+  >
+    <AlertDescription className="text-center font-medium">
+      {alertMessage}
+    </AlertDescription>
+  </Alert>
+</div>
       )}
 
       {/* Profile Header */}
@@ -301,7 +317,7 @@ export const ProfileSection = () => {
                     {userDetail.profile?.full_name
                       ?.split(" ")
                       .map((n) => n[0])
-                      .join("") || "U"}
+                      .join("") || "K"}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -312,15 +328,17 @@ export const ProfileSection = () => {
             )}
           </div>
         </div>
-        <h1 className="text-xl md:text-2xl font-bold mb-2">
+        <h1 className="text-xl md:text-2xl font-bold mb-2" itemProp="username">
           {userDetail.profile.username}
         </h1>
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2" itemProp="name">
           {userDetail.profile.full_name}
         </h1>
-        <p className="text-muted-foreground">{userDetail.profile.email}</p>
+        <p className="text-muted-foreground" itemProp="email">
+          {userDetail.profile.email}
+        </p>
         <p className="text-sm text-muted-foreground mt-1">
-          Member since {formatDate(userDetail.profile.profile_created_at)}
+          Üyelik başlangıcı: {formatDate(userDetail.profile.profile_created_at)}
         </p>
       </div>
 
@@ -329,37 +347,37 @@ export const ProfileSection = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <Package className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold" aria-label="Toplam Sipariş">
               {userDetail.order_stats.total_orders}
             </div>
-            <div className="text-sm text-muted-foreground">Total Orders</div>
+            <div className="text-sm text-muted-foreground">Toplam Sipariş</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <ShoppingCart className="h-8 w-8 mx-auto mb-2 text-green-600" />
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold" aria-label="Sepet Ürünleri">
               {userDetail.cart_summary.items_count}
             </div>
-            <div className="text-sm text-muted-foreground">Cart Items</div>
+            <div className="text-sm text-muted-foreground">Sepetteki Ürünler</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <CreditCard className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold" aria-label="Toplam Harcama">
               {userDetail.order_stats.lifetime_value.toFixed(0)} ₺
             </div>
-            <div className="text-sm text-muted-foreground">Lifetime Value</div>
+            <div className="text-sm text-muted-foreground">Toplam Harcama</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <Clock className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold" aria-label="Bekleyen Siparişler">
               {userDetail.order_stats.pending_orders}
             </div>
-            <div className="text-sm text-muted-foreground">Pending Orders</div>
+            <div className="text-sm text-muted-foreground">Bekleyen Siparişler</div>
           </CardContent>
         </Card>
       </div>
@@ -369,19 +387,19 @@ export const ProfileSection = () => {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Overview</span>
+            <span className="hidden sm:inline">Genel Bakış</span>
           </TabsTrigger>
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            <span className="hidden sm:inline">Orders</span>
+            <span className="hidden sm:inline">Siparişler</span>
           </TabsTrigger>
           <TabsTrigger value="cart" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
-            <span className="hidden sm:inline">Cart</span>
+            <span className="hidden sm:inline">Sepet</span>
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Settings</span>
+            <span className="hidden sm:inline">Ayarlar</span>
           </TabsTrigger>
         </TabsList>
 
@@ -390,30 +408,30 @@ export const ProfileSection = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Order Statistics</CardTitle>
+                <CardTitle>Sipariş İstatistikleri</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span>Completed Orders:</span>
+                  <span>Tamamlanan Siparişler:</span>
                   <span className="font-medium">
                     {userDetail.order_stats.completed_orders}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Shipped Orders:</span>
+                  <span>Kargoya Verilen Siparişler:</span>
                   <span className="font-medium">
                     {userDetail.order_stats.shipped_orders}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Average Order Value:</span>
+                  <span>Ortalama Sipariş Tutarı:</span>
                   <span className="font-medium">
                     {userDetail.order_stats.avg_order_value.toFixed(2)} ₺
                   </span>
                 </div>
                 {userDetail.order_stats.last_order_date && (
                   <div className="flex justify-between">
-                    <span>Last Order:</span>
+                    <span>Son Sipariş:</span>
                     <span className="font-medium">
                       {formatDate(userDetail.order_stats.last_order_date)}
                     </span>
@@ -424,23 +442,23 @@ export const ProfileSection = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Cart Summary</CardTitle>
+                <CardTitle>Sepet Özeti</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span>Items in Cart:</span>
+                  <span>Sepetteki Ürün Sayısı:</span>
                   <span className="font-medium">
                     {userDetail.cart_summary.items_count}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Total Quantity:</span>
+                  <span>Toplam Adet:</span>
                   <span className="font-medium">
                     {userDetail.cart_summary.total_quantity}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Cart Value:</span>
+                  <span>Sepet Tutarı:</span>
                   <span className="font-medium">
                     {userDetail.cart_summary.cart_value?.toFixed(2) || "0.00"} ₺
                   </span>
@@ -454,15 +472,15 @@ export const ProfileSection = () => {
         <TabsContent value="orders" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Orders</CardTitle>
+              <CardTitle>Son Siparişler</CardTitle>
             </CardHeader>
             <CardContent>
               {userDetail.recent_orders.length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No orders yet</h3>
+                  <h3 className="text-lg font-semibold mb-2">Henüz siparişiniz yok</h3>
                   <p className="text-muted-foreground">
-                    Your order history will appear here.
+                    Sipariş geçmişiniz burada görünecek.
                   </p>
                 </div>
               ) : (
@@ -474,12 +492,11 @@ export const ProfileSection = () => {
                     >
                       <div className="flex items-center space-x-4">
                         <div>
-                          <div className="font-medium">
-                            Order #{order.id.slice(0, 8)}
+                          <div className="font-medium" aria-label="Sipariş Numarası">
+                            Sipariş #{order.id.slice(0, 8)}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {formatDate(order.created_at)} • {order.items_count}{" "}
-                            items
+                            {formatDate(order.created_at)} • {order.items_count} ürün
                           </div>
                         </div>
                       </div>
@@ -489,12 +506,20 @@ export const ProfileSection = () => {
                             {order.total_amount.toFixed(2)} ₺
                           </div>
                           <Badge className={getStatusColor(order.status)}>
-                            {order.status}
+                            {order.status === "completed"
+                              ? "Tamamlandı"
+                              : order.status === "shipped"
+                              ? "Kargoya Verildi"
+                              : order.status === "pending"
+                              ? "Bekliyor"
+                              : order.status === "cancelled"
+                              ? "İptal Edildi"
+                              : order.status}
                           </Badge>
                         </div>
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4 mr-2" />
-                          View
+                          <span aria-label="Siparişi Görüntüle">Görüntüle</span>
                         </Button>
                       </div>
                     </div>
@@ -516,10 +541,10 @@ export const ProfileSection = () => {
               <CardContent className="text-center py-8">
                 <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">
-                  Your cart is empty
+                  Sepetiniz boş
                 </h3>
                 <p className="text-muted-foreground">
-                  Add products to your cart to see them here.
+                  Sepetinize ürün eklediğinizde burada görebilirsiniz.
                 </p>
               </CardContent>
             </Card>
@@ -528,21 +553,23 @@ export const ProfileSection = () => {
               {cartData.cart_items.map((item) => (
                 <Card key={item.cart_item_id}>
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      <Link href={`/magaza/${item.product_id}`}>
                       <Image
                         src={item.product_image || "/placeholder-product.jpg"}
                         alt={item.product_title}
                         width={64}
                         height={64}
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-medium">{item.product_title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Size: {item.variant_data.size} • SKU:{" "}
-                          {item.variant_data.sku}
-                        </p>
-                        <p className="font-medium">
+                        className="w-24 h-24 sm:w-16 sm:h-16 object-cover rounded mx-auto"
+                        />
+                        </Link>
+                      <div className="flex-1 w-full">
+                        <h4 className="font-medium text-center sm:text-left" itemProp="name">{item.product_title}</h4>
+                        <div className="space-y-1 text-sm text-muted-foreground mb-3">
+                          <p>Varyete: {item.variant_data.size}</p>
+                          <p>SKU: {item.variant_data.sku}</p>
+                        </div>
+                        <p className="font-medium text-center sm:text-left">
                           {item.unit_price.toFixed(2)} ₺
                         </p>
                       </div>
@@ -561,11 +588,12 @@ export const ProfileSection = () => {
                             itemLoading === item.cart_item_id
                           }
                           className="h-8 w-8 p-0"
+                          aria-label="Adet Azalt"
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
 
-                        <span className="font-medium min-w-8 text-center">
+                        <span className="font-medium min-w-8 text-center" aria-label="Adet">
                           {item.quantity}
                         </span>
 
@@ -583,12 +611,13 @@ export const ProfileSection = () => {
                             itemLoading === item.cart_item_id
                           }
                           className="h-8 w-8 p-0"
+                          aria-label="Adet Arttır"
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium">
+                      <div className="text-right w-full sm:w-auto">
+                        <div className="font-medium text-center sm:text-right">
                           {item.line_total.toFixed(2)} ₺
                         </div>
                         <Button
@@ -598,7 +627,8 @@ export const ProfileSection = () => {
                             handleRemoveFromCart(item.cart_item_id)
                           }
                           disabled={itemLoading === item.cart_item_id}
-                          className="mt-2 text-red-600 hover:text-red-700"
+                          className="mt-2 text-red-600 hover:text-red-700 mx-auto sm:mx-0"
+                          aria-label="Sepetten Kaldır"
                         >
                           {itemLoading === item.cart_item_id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -616,10 +646,10 @@ export const ProfileSection = () => {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold">
-                      Total: {cartData.total.toFixed(2)} ₺
+                      Toplam: {cartData.total.toFixed(2)} ₺
                     </span>
                     <Link href="/sepet" className="inline-block">
-                    <Button>Proceed to Checkout</Button>
+                      <Button aria-label="Ödeme Adımına Geç">Ödeme Yap</Button>
                     </Link>
                   </div>
                 </CardContent>
@@ -632,7 +662,7 @@ export const ProfileSection = () => {
         <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Profile Settings</CardTitle>
+              <CardTitle>Profil Ayarları</CardTitle>
               <Button
                 variant={isEditing ? "outline" : "default"}
                 onClick={() => {
@@ -645,8 +675,9 @@ export const ProfileSection = () => {
                   }
                   setIsEditing(!isEditing);
                 }}
+                aria-label={isEditing ? "İptal Et" : "Profili Düzenle"}
               >
-                {isEditing ? "Cancel" : "Edit Profile"}
+                {isEditing ? "İptal Et" : "Profili Düzenle"}
               </Button>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -660,7 +691,7 @@ export const ProfileSection = () => {
                           {userDetail.profile?.full_name
                             ?.split(" ")
                             .map((n) => n[0])
-                            .join("") || "U"}
+                            .join("") || "K"}
                         </AvatarFallback>
                       </Avatar>
                     ) : (
@@ -678,7 +709,8 @@ export const ProfileSection = () => {
                         onClick={() =>
                           setShowAvatarSelector(!showAvatarSelector)
                         }
-                        title="Choose from gallery"
+                        title="Galeriden Seç"
+                        aria-label="Avatar Seç"
                       >
                         <Pimage className="h-4 w-4" />
                       </Button>
@@ -691,11 +723,12 @@ export const ProfileSection = () => {
               {isEditing && showAvatarSelector && (
                 <Card className="p-4">
                   <div className="mb-3 flex items-center justify-between">
-                    <h4 className="font-medium">Choose an Avatar</h4>
+                    <h4 className="font-medium">Avatar Seç</h4>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowAvatarSelector(false)}
+                      aria-label="Kapat"
                     >
                       ✕
                     </Button>
@@ -706,6 +739,7 @@ export const ProfileSection = () => {
                         key={index}
                         className="group relative flex flex-col sm:flex-row items-center justify-center sm:items-center space-y-3 sm:space-y-0 sm:space-x-4"
                         onClick={() => handleSelectAvatar(avatar)}
+                        aria-label="Avatar Seçenekleri"
                       >
                         <div
                           className={`
@@ -726,7 +760,7 @@ export const ProfileSection = () => {
                               {userDetail.profile?.full_name
                                 ?.split(" ")
                                 .map((n) => n[0])
-                                .join("") || "U"}
+                                .join("") || "K"}
                             </AvatarFallback>
                           </Avatar>
                           {/* Only show overlay on hover */}
@@ -741,14 +775,14 @@ export const ProfileSection = () => {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-3 text-center">
-                    Click on an avatar to select it, then save your changes
+                    Bir avatar seçmek için üzerine tıklayın, ardından değişiklikleri kaydedin.
                   </p>
                 </Card>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username">Kullanıcı Adı</Label>
                   <Input
                     id="username"
                     value={editForm.username}
@@ -762,7 +796,7 @@ export const ProfileSection = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
+                  <Label htmlFor="full_name">Ad Soyad</Label>
                   <Input
                     id="full_name"
                     value={editForm.full_name}
@@ -776,7 +810,7 @@ export const ProfileSection = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">E-posta</Label>
                   <Input
                     id="email"
                     value={userDetail.profile.email}
@@ -799,17 +833,18 @@ export const ProfileSection = () => {
                         avatar_url: userDetail.profile.avatar_url || "",
                       });
                     }}
+                    aria-label="İptal Et"
                   >
-                    Cancel
+                    İptal Et
                   </Button>
-                  <Button onClick={handleSaveProfile} disabled={loading}>
+                  <Button onClick={handleSaveProfile} disabled={loading} aria-label="Kaydet">
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
+                        Kaydediliyor...
                       </>
                     ) : (
-                      "Save Changes"
+                      "Değişiklikleri Kaydet"
                     )}
                   </Button>
                 </div>

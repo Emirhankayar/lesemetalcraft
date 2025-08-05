@@ -1,11 +1,18 @@
-import type { NextConfig } from "next";
-
+/** @type {import('next').NextConfig} */
 const nextConfig = {
+  /*output: 'export', */
   images: {
-    domains: [
-      'images.unsplash.com',
-      'api.dicebear.com'
-    ], 
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "api.dicebear.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
   },
 };
+
 export default nextConfig;

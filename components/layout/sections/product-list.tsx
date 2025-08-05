@@ -1,15 +1,26 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/sbClient";
+import { supabase } from "@/lib/sbClient";
 import { ProductCard } from "@/components/ui/product-card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { ProductsResponse } from "@/lib/types";
+import { TrendingUp } from "lucide-react";
+import Link from "next/link";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 export const ProductList = () => {
   const [products, setProducts] = useState<ProductsResponse | null>(null);
+  const [popular, setPopular] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -36,14 +47,16 @@ export const ProductList = () => {
 
     const newUrl = params.toString()
       ? `/magaza?${params.toString()}`
-      : "/magaza?page=1&limit=10";
+      : "/magaza?page=1&limit=12";
     router.push(newUrl, { scroll: false });
   };
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 3000, stopOnInteraction: true })
+  );
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      const supabase = createClient();
 
       try {
         const { data, error } = await supabase.rpc("get_shop_products", {
@@ -59,7 +72,6 @@ export const ProductList = () => {
           console.error("Error fetching products:", error);
         } else {
           setProducts(data);
-          console.log("Products:", data);
         }
       } catch (err) {
         console.error("Fetch error:", err);
@@ -67,9 +79,24 @@ export const ProductList = () => {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, [currentPage, pageSize]);
+
+  useEffect(() => {
+    const fetchPopular = async () => {
+      try {
+        const { data } = await supabase.rpc("get_popular_simple", {
+          max_results: 8,
+        });
+        if (data?.products) {
+          setPopular(data.products);
+        }
+      } catch (err) {
+        console.error("Error fetching popular products:", err);
+      }
+    };
+    fetchPopular();
+  }, []);
 
   const handleNextPage = () => {
     if (products?.pagination?.has_next) {
@@ -98,7 +125,7 @@ export const ProductList = () => {
     return (
       <section className="container flex flex-col items-center justify-center mx-auto max-w-6xl min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin" />
-        <p className="mt-4 text-muted-foreground">Loading products list...</p>
+        <p className="mt-4 text-muted-foreground">Ürün listesi yükleniyor...</p>
       </section>
     );
   }
@@ -107,12 +134,83 @@ export const ProductList = () => {
     <section id="product" className="container mx-auto px-4 py-32 max-w-6xl">
       {/* Header */}
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold tracking-tight mb-4">Our Products</h2>
+        <h2 className="text-3xl font-bold tracking-tight mb-4">Ürünlerimiz</h2>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Discover our curated collection of premium products, carefully
-          selected for quality and value.
+          Kalite ve değer açısından özenle seçilmiş, özel ürün koleksiyonumuzu keşfedin.
         </p>
       </div>
+
+      {popular.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-orange-500" />
+            <h3 className="text-xl font-semibold">Popüler Ürünler</h3>
+          </div>
+          {/* Carousel for Popular */}
+          <div className="">
+            <Carousel
+              plugins={[autoplayPlugin.current]}
+              opts={{
+                align: "start",
+                loop: true,
+                dragFree: true,
+              }}
+              className="w-full"
+              onMouseEnter={() => autoplayPlugin.current.stop()}
+              onMouseLeave={() => autoplayPlugin.current.reset()}
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {popular.map((product) => (
+                  <CarouselItem
+                    key={product.id}
+                    className="pl-2 md:pl-4 basis-1/2 sm:basis-1/3 md:basis-1/4"
+                  >
+                    <div className="group cursor-pointer">
+                      <Link
+                        href={`/magaza/${product.id}`}
+                      >
+
+                      <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden mb-2">
+                        {product.image ? (
+                          
+                          <img
+                          src={product.image}
+                          alt={product.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <span className="text-xs">Resim Yok</span>
+                          </div>
+                        )}
+                      </div>
+                            </Link>
+                      <p
+                        className="text-sm font-medium truncate"
+                        title={product.title}
+                      >
+                        {product.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground font-semibold">
+                        {product.price.toLocaleString("tr-TR")} ₺
+                      </p>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden sm:flex -left-4 lg:hidden" />
+              <CarouselNext className="hidden sm:flex -right-4 lg:hidden" />
+            </Carousel>
+            <div className="flex justify-center mt-2 sm:hidden">
+              <p className="text-xs text-muted-foreground">
+                ← Kaydırarak daha fazla ürün görebilirsiniz →
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {products?.pagination && totalPages > 1 && (
         <PaginationControls
@@ -143,9 +241,9 @@ export const ProductList = () => {
         <Alert className="my-8">
           <AlertDescription className="text-center py-8">
             <div className="text-6xl mb-4">🛍️</div>
-            <h3 className="text-lg font-semibold mb-2">No products found</h3>
+            <h3 className="text-lg font-semibold mb-2">Ürün bulunamadı</h3>
             <p className="text-muted-foreground">
-              Try adjusting your search or check back later.
+              Aramanızı değiştirin veya daha sonra tekrar kontrol edin.
             </p>
           </AlertDescription>
         </Alert>

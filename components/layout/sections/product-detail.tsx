@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import { createClient } from "@/lib/sbClient";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,9 +24,9 @@ import {
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Product, ProductVariant, ProductDetail, Comment } from "@/lib/types";
+import { supabase } from "@/lib/sbClient";
 
 export const ProductDetailSection = () => {
-  const supabase = createClient();
   const params = useParams();
   const productId = params?.productId as string | undefined;
   const [productDetail, setProductDetail] = useState<ProductDetail | null>(
@@ -104,56 +103,56 @@ export const ProductDetailSection = () => {
   };
 
   const handleLike = async () => {
-  if (!productDetail || !productDetail.user_authenticated) {
-    setAlertMessage("Please log in to like products.");
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase.rpc(
-      isLiked ? "unlike_product" : "like_product",
-      { product_uuid: productId }
-    );
-
-    if (error) {
-      console.error("Error updating like:", error);
-      setAlertMessage("Failed to update like. Please try again.");
-    } else {
-      setIsLiked(!isLiked);
-
-      setProductDetail((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          product: {
-            ...prev.product,
-            likes_count: prev.product.likes_count + (isLiked ? -1 : 1),
-            user_has_liked: !isLiked,
-          },
-          comments: prev.comments,
-          user_authenticated: prev.user_authenticated,
-        };
-      });
-      setAlertMessage(
-        isLiked
-          ? "Removed from your liked products."
-          : "Added to your liked products."
-      );
+    if (!productDetail || !productDetail.user_authenticated) {
+      setAlertMessage("Ürünleri beğenmek için lütfen giriş yapın.");
+      return;
     }
-  } catch (error) {
-    console.error("Error in handleLike:", error);
-    setAlertMessage("Failed to update like. Please try again.");
-  }
-};
+
+    try {
+      const { data, error } = await supabase.rpc(
+        isLiked ? "unlike_product" : "like_product",
+        { product_uuid: productId }
+      );
+
+      if (error) {
+        console.error("Error updating like:", error);
+        setAlertMessage("Beğeni güncellenemedi. Lütfen tekrar deneyin.");
+      } else {
+        setIsLiked(!isLiked);
+
+        setProductDetail((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            product: {
+              ...prev.product,
+              likes_count: prev.product.likes_count + (isLiked ? -1 : 1),
+              user_has_liked: !isLiked,
+            },
+            comments: prev.comments,
+            user_authenticated: prev.user_authenticated,
+          };
+        });
+        setAlertMessage(
+          isLiked
+            ? "Beğendiğiniz ürünlerden kaldırıldı."
+            : "Beğendiğiniz ürünlere eklendi."
+        );
+      }
+    } catch (error) {
+      console.error("Error in handleLike:", error);
+      setAlertMessage("Beğeni güncellenemedi. Lütfen tekrar deneyin.");
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!productDetail || !productDetail.user_authenticated) {
-     setAlertMessage("Please log in to write a review.");
+      setAlertMessage("Sepete eklemek için lütfen giriş yapın.");
       return;
     }
 
     if (!selectedVariant) {
-     setAlertMessage("Please select a variant.");
+      setAlertMessage("Lütfen bir varyant seçin.");
       return;
     }
 
@@ -167,10 +166,10 @@ export const ProductDetailSection = () => {
 
       if (error) {
         console.error("Error adding to cart:", error);
-       setAlertMessage("Failed to add item to cart. Please try again.");
+        setAlertMessage("Ürün sepete eklenemedi. Lütfen tekrar deneyin.");
       } else {
         if (data.success) {
-          setAlertMessage(`Successfully ${data.action} ${quantity} item(s) to cart!`)
+          setAlertMessage(`Başarıyla ${quantity} adet ürün sepete eklendi!`);
           setProductDetail((prev) => {
             if (!prev) return prev;
             return {
@@ -185,12 +184,12 @@ export const ProductDetailSection = () => {
             };
           });
         } else {
-         setAlertMessage(data.error || "Failed to add item to cart.");
+          setAlertMessage(data.error || "Ürün sepete eklenemedi.");
         }
       }
     } catch (error) {
       console.error("Error in handleAddToCart:", error);
-     setAlertMessage("Failed to add item to cart. Please try again.");
+      setAlertMessage("Ürün sepete eklenemedi. Lütfen tekrar deneyin.");
     } finally {
       setLoading(false);
     }
@@ -198,17 +197,17 @@ export const ProductDetailSection = () => {
 
   const handleSubmitComment = async () => {
     if (!productDetail || !productDetail.user_authenticated) {
-     setAlertMessage("Please log in to write a review.");
+      setAlertMessage("Yorum yazmak için lütfen giriş yapın.");
       return;
     }
 
     if (!newComment.trim() || newRating === 0) {
-     setAlertMessage("Please provide both a rating and a comment.");
+      setAlertMessage("Lütfen hem puan hem de yorum girin.");
       return;
     }
 
     if (newComment.length > 500) {
-     setAlertMessage("Comment must be 500 characters or less.");
+      setAlertMessage("Yorum en fazla 500 karakter olmalı.");
       return;
     }
 
@@ -221,14 +220,14 @@ export const ProductDetailSection = () => {
       .substr(2, 9)}`;
     const optimisticComment = {
       id: optimisticId,
-      user: "You",
+      user: "Siz",
       user_avatar: null,
       rating: originalRating,
       comment: originalComment,
       date: new Date().toISOString().split("T")[0],
       isOptimistic: true,
     };
-  
+
     const currentComments = [...comments];
     setComments([optimisticComment, ...currentComments]);
 
@@ -244,7 +243,7 @@ export const ProductDetailSection = () => {
         setComments(currentComments);
         setNewComment(originalComment);
         setNewRating(originalRating);
-       setAlertMessage(data?.error || "Failed to add review. Please try again.");
+        setAlertMessage(data?.error || "Yorum eklenemedi. Lütfen tekrar deneyin.");
         setCommentLoading(false);
         return;
       }
@@ -258,7 +257,7 @@ export const ProductDetailSection = () => {
         date: data.comment.date,
         isOptimistic: false,
       };
-      
+
       setComments((prevComments) =>
         prevComments.map((comment) =>
           comment.id === optimisticId ? realComment : comment
@@ -293,13 +292,13 @@ export const ProductDetailSection = () => {
       setNewComment("");
       setNewRating(0);
 
-     setAlertMessage("Review added successfully!");
+      setAlertMessage("Yorum başarıyla eklendi!");
     } catch (error) {
       console.error("Error in handleSubmitComment:", error);
       setComments(currentComments);
       setNewComment(originalComment);
       setNewRating(originalRating);
-     setAlertMessage("Failed to add review. Please try again.");
+      setAlertMessage("Yorum eklenemedi. Lütfen tekrar deneyin.");
     } finally {
       setCommentLoading(false);
     }
@@ -309,8 +308,9 @@ export const ProductDetailSection = () => {
 
   if (loading || !product || !productDetail) {
     return (
-      <section id="product" className="container flex flex-col items-center justify-center mx-auto max-w-6xl">
-            <Loader2 className="h-screen inset-0 w-22 animate-spin" />
+      <section className="container flex flex-col items-center justify-center mx-auto max-w-6xl min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin" />
+        <p className="mt-4 text-muted-foreground">Ürün yükleniyor...</p>
       </section>
     );
   }
@@ -348,13 +348,13 @@ export const ProductDetailSection = () => {
         <div className="space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
             <img
-              src={product.images[selectedImageIndex]}
+              src={product.images[selectedImageIndex] || "/placeholder-product.jpg"}
               alt={product.title}
               className="w-full h-full object-cover"
             />
             {product.featured && (
               <Badge className="absolute top-4 left-4 bg-yellow-500 hover:bg-yellow-600">
-                Featured
+                Öne Çıkan
               </Badge>
             )}
             {product.images.length > 1 && (
@@ -405,7 +405,7 @@ export const ProductDetailSection = () => {
                   }`}
                 >
                   <img
-                    src={image}
+                    src={image || "/placeholder-product.jpg"}
                     alt={`${product.title} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -445,7 +445,7 @@ export const ProductDetailSection = () => {
                   </span>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  ({product.ratings_count} reviews)
+                  ({product.ratings_count} inceleme)
                 </span>
               </div>
             )}
@@ -474,7 +474,7 @@ export const ProductDetailSection = () => {
           {/* Variants */}
           {product.variants?.variants && (
             <div className="space-y-3">
-              <h3 className="font-semibold">Select Variant:</h3>
+              <h3 className="font-semibold">Varyant Seçin:</h3>
               <div className="grid grid-cols-1 gap-2">
                 {product.variants.variants.map((variant) => (
                   <button
@@ -505,7 +505,7 @@ export const ProductDetailSection = () => {
 
           {/* Quantity Selector */}
           <div className="space-y-3">
-            <h3 className="font-semibold">Quantity:</h3>
+            <h3 className="font-semibold">Adet:</h3>
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
@@ -525,7 +525,7 @@ export const ProductDetailSection = () => {
                 <Plus className="h-4 w-4" />
               </Button>
               <span className="text-sm text-muted-foreground ml-2">
-                {selectedVariant?.stock} available
+                {selectedVariant?.stock} adet mevcut
               </span>
             </div>
           </div>
@@ -538,7 +538,7 @@ export const ProductDetailSection = () => {
               disabled={loading || !selectedVariant?.stock}
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
-              {loading ? "Adding..." : "Add to Cart"}
+              {loading ? "Ekleniyor..." : "Sepete Ekle"}
             </Button>
             <Button
               variant="outline"
@@ -555,8 +555,7 @@ export const ProductDetailSection = () => {
               <Alert>
                 <ShoppingCart className="h-4 w-4" />
                 <AlertDescription>
-                  You already have {product.user_cart_quantity ?? 0} of this
-                  item in your cart.
+                  Bu üründen zaten {product.user_cart_quantity ?? 0} adet sepetinizde mevcut.
                 </AlertDescription>
               </Alert>
             )}
@@ -565,15 +564,15 @@ export const ProductDetailSection = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t">
             <div className="flex items-center gap-2 text-sm">
               <Truck className="h-4 w-4 text-green-600" />
-              <span>Free Shipping</span>
+              <span>Ücretsiz Kargo</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Shield className="h-4 w-4 text-blue-600" />
-              <span>1 Year Warranty</span>
+              <span>1 Yıl Garanti</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <RotateCcw className="h-4 w-4 text-orange-600" />
-              <span>30 Day Returns</span>
+              <span>30 Gün İade</span>
             </div>
           </div>
         </div>
@@ -582,13 +581,13 @@ export const ProductDetailSection = () => {
       {/* Reviews and Comments Section */}
       <div className="mt-16 space-y-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Reviews & Comments</h2>
+          <h2 className="text-2xl font-bold">Yorumlar & Değerlendirmeler</h2>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span>{product.ratings_average?.toFixed(1)} average</span>
+            <span>{product.ratings_average?.toFixed(1)} ortalama</span>
             <span>•</span>
             <span>
-              {comments.length} review{comments.length !== 1 ? "s" : ""}
+              {comments.length} yorum
             </span>
           </div>
         </div>
@@ -596,11 +595,10 @@ export const ProductDetailSection = () => {
         {/* Add Comment Section */}
         {productDetail.user_authenticated && (
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
-
+            <h3 className="text-lg font-semibold mb-4">Yorum Yaz</h3>
             {/* Rating Input */}
             <div className="space-y-2 mb-4">
-              <label className="text-sm font-medium">Your Rating</label>
+              <label className="text-sm font-medium">Puanınız</label>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -619,27 +617,25 @@ export const ProductDetailSection = () => {
                 ))}
                 {newRating > 0 && (
                   <span className="ml-2 text-sm text-muted-foreground">
-                    {newRating} star{newRating !== 1 ? "s" : ""}
+                    {newRating} yıldız
                   </span>
                 )}
               </div>
             </div>
-
             {/* Comment Input */}
             <div className="space-y-2 mb-4">
-              <label className="text-sm font-medium">Your Review</label>
+              <label className="text-sm font-medium">Yorumunuz</label>
               <Textarea
-                placeholder="Share your experience with this product..."
+                placeholder="Bu ürünle ilgili deneyiminizi paylaşın..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 rows={4}
                 className="resize-none"
               />
               <div className="text-xs text-muted-foreground text-right">
-                {newComment.length}/500 characters
+                {newComment.length}/500 karakter
               </div>
             </div>
-
             {/* Submit Button */}
             <Button
               onClick={handleSubmitComment}
@@ -647,7 +643,7 @@ export const ProductDetailSection = () => {
               className="w-full sm:w-auto"
             >
               <Send className="h-4 w-4 mr-2" />
-              {commentLoading ? "Publishing..." : "Publish Review"}
+              {commentLoading ? "Yayınlanıyor..." : "Yorumu Yayınla"}
             </Button>
           </Card>
         )}
@@ -705,10 +701,10 @@ export const ProductDetailSection = () => {
                     {/* Actions */}
                     <div className="flex items-center gap-4 pt-2">
                       <button className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                        Helpful
+                        Faydalı
                       </button>
                       <button className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                        Reply
+                        Yanıtla
                       </button>
                     </div>
                   </div>
@@ -720,14 +716,13 @@ export const ProductDetailSection = () => {
           <Card className="p-8">
             <div className="text-center">
               <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No reviews yet</h3>
+              <h3 className="text-lg font-semibold mb-2">Henüz yorum yok</h3>
               <p className="text-muted-foreground mb-4">
-                Be the first to review this product and help other customers
-                make informed decisions.
+                İlk yorumu siz yapın ve diğer müşterilerin bilinçli karar vermesine yardımcı olun.
               </p>
               {!productDetail.user_authenticated && (
                 <p className="text-sm text-muted-foreground">
-                  Please log in to write a review.
+                  Yorum yazmak için lütfen giriş yapın.
                 </p>
               )}
             </div>

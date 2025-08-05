@@ -27,6 +27,8 @@ export const metadata = {
 export default function Home() {
   return (
     <>
+    <div id="main" className="container mx-auto px-4 py-32 max-w-6xl">
+
       <HeroSection />
       {/* <SponsorsSection /> */}
       <BenefitsSection />
@@ -38,6 +40,7 @@ export default function Home() {
   
       <ContactSection />
       {/*<FAQSection />*/}
+    </div>
     </>
   );
 }
