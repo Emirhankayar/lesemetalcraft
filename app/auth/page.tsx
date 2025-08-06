@@ -1,4 +1,4 @@
-import AuthSection from "@/components/layout/sections/auth";
+import AuthPage from "@/components/layout/auth-page";
 
 export const metadata = {
   title: "Giriş Yap - LESE Metalcraft",
@@ -19,10 +19,11 @@ export const metadata = {
   },
 };
 
-export default function AuthPage() {
+export default function Auth() {
   return (
     <main className="min-h-screen bg-background">
-      <AuthSection />
+      
+      <AuthPage />
     </main>
   );
 }

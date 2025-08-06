@@ -272,7 +272,6 @@ export const ProfileSection = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Fixed: Use useEffect instead of useState with a function that calls setEditForm
   useEffect(() => {
     if (userDetail) {
       setEditForm({

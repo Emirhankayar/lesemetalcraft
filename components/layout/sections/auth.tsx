@@ -30,7 +30,7 @@ export default function AuthSection() {
     };
   }, [supabase, router]);
   return (
-      <section className="container flex items-center justify-center mx-auto px-4 py-24 max-w-6xl">
+      <section className="container flex items-center justify-center mx-auto">
       <div className="w-full max-w-md shadow-xl p-6 rounded-lg border bg-card text-card-foreground outline">
         {redirectTo && (
           <Auth
