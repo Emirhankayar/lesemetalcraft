@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useCallback, memo } from "react";
+import { useState, useRef, useCallback, memo, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from "@/lib/sbClient";
 import {
@@ -272,7 +272,8 @@ export const ProfileSection = () => {
     refetchOnWindowFocus: false,
   });
 
-  useState(() => {
+  // Fixed: Use useEffect instead of useState with a function that calls setEditForm
+  useEffect(() => {
     if (userDetail) {
       setEditForm({
         username: userDetail.profile.username || "",
@@ -280,7 +281,7 @@ export const ProfileSection = () => {
         avatar_url: userDetail.profile.avatar_url || "",
       });
     }
-  });
+  }, [userDetail]);
 
   const {
     data: cartData,
@@ -409,9 +410,11 @@ export const ProfileSection = () => {
     });
   }, []);
 
-  if (profileError) {
-    showAlertMessage(profileError.message);
-  }
+  useEffect(() => {
+    if (profileError) {
+      showAlertMessage(profileError.message);
+    }
+  }, [profileError, showAlertMessage]);
 
   if (loading && !userDetail) {
     return (
