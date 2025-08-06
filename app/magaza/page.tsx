@@ -1,4 +1,4 @@
-import { ProductList } from "@/components/layout/sections/product-list";
+import ShopPage from "@/components/layout/shop-page";
 import { Metadata } from "next";
 
 type Props = {
@@ -77,7 +77,7 @@ export default async function ProductListPage({ searchParams }: Props) {
   const params = await searchParams;
   return (
     <>
-      <ProductList />
+      <ShopPage/>
     </>
   );
 }

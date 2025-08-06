@@ -31,7 +31,7 @@ const routeList: { href: string; label: string; icon?: React.ReactNode }[] = [
   { href: "/#about", label: "Hakkımızda", icon: <HelpCircle className="w-4 h-4" /> },
   { href: "/#services", label: "Hizmetlerimiz", icon: <CircleCheckBig className="w-4 h-4" /> },
   { href: "/#contact", label: "İletişim", icon: <Send className="w-4 h-4" /> },
-  { href: "/magaza?page=1&limit=12", label: "Mağaza", icon: <Store className="w-4 h-4" /> },
+  { href: "/magaza", label: "Mağaza", icon: <Store className="w-4 h-4" /> },
   { href: "/sepet", label: "Sepet", icon: <ShoppingCart className="w-4 h-4" /> },
   { href: "/profil", label: "Profil", icon: <UserIcon className="w-4 h-4" /> },
 ];
@@ -114,7 +114,7 @@ export const Navbar = () => {
       </div>
     ) : (
       <div className="hidden lg:block">
-        <Link href="/auth">
+        <Link href="/auth"  prefetch={true}>
           <Button variant="outline" className="text-xs justify-start" disabled={loading}>
             <LogIn className="size-5 text-blue-500 hover:text-blue-700 transition-colors" />
           {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
@@ -140,7 +140,7 @@ const renderMobileAuthContent = () => {
     </div>
   ) : (
     <div className="mx-4">
-      <Link href="/auth" className="w-full">
+      <Link href="/auth"  prefetch={true} className="w-full">
         <Button variant="outline" className="text-xs justify-start w-full" disabled={loading}>
           <LogIn className="size-5 text-blue-500 hover:text-blue-700 transition-colors mr-2" />
           {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
@@ -166,7 +166,7 @@ const renderMobileAuthContent = () => {
             <div>
               <SheetHeader className="mb-4 ml-4">
                 <SheetTitle>
-                  <Link href="/" className="flex items-center">
+                  <Link href="/"  prefetch={true} className="flex items-center">
                     <Image src={leseicon} alt="LESE logo" className="w-20" />
                   </Link>
                 </SheetTitle>
@@ -186,7 +186,7 @@ const renderMobileAuthContent = () => {
                     variant="ghost"
                     className="justify-start text-base flex gap-2"
                   >
-                    <Link href={href} className="flex items-center gap-2 py-8">
+                    <Link href={href} prefetch={true} className="flex items-center gap-2 py-8">
                       {icon}{label}
                     </Link>
                   </Button>
@@ -210,7 +210,7 @@ const renderMobileAuthContent = () => {
           <NavigationMenuItem>
             <NavigationMenuTrigger>
               <Home className="w-4 h-4 mr-2" />
-              <Link href="/">
+              <Link href="/"  prefetch={true}>
                 Anasayfa
               </Link>
             </NavigationMenuTrigger>
@@ -222,7 +222,7 @@ const renderMobileAuthContent = () => {
                     asChild
                   >
                     <Link
-                      href={href}
+                      href={href}  prefetch={true}
                       className="flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
                     >
                       {icon}
@@ -243,7 +243,7 @@ const renderMobileAuthContent = () => {
                 variant="ghost"
                 className="justify-start text-base"
               >
-                <Link href={href} className="flex items-center gap-2">
+                <Link href={href}  prefetch={true} className="flex items-center gap-2">
                   {icon}
                   {label}
                 </Link>

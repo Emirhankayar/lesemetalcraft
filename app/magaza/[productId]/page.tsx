@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import { ProductDetailSection } from "@/components/layout/sections/product-detail";
 import { supabase } from "@/lib/sbClient";
+import ProductDetailPage from "@/components/layout/product-page";
 
 const createProductMetadata = (productName: string, productDescription: string, productId: string) => {
   const title = `${productName} - LESE Metalcraft`;
@@ -93,7 +93,7 @@ export async function generateMetadata(
 export default function Shop() {
   return (
     <>
-      <ProductDetailSection />
+      <ProductDetailPage />
     </>
   );
 }

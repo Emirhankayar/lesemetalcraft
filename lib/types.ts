@@ -146,3 +146,18 @@ export type CartSummary = {
   total_quantity: number;
 };
 
+export type ContactFormData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  subject: string;
+  message: string;
+};
+
+export type ContactFormErrors = Partial<{
+  firstName: string;
+  lastName: string;
+  email: string;
+  subject: string;
+  message: string; 
+}>;

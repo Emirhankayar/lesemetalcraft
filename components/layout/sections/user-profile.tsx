@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef, useCallback, memo } from "react";
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from "@/lib/sbClient";
 import {
   Card,
@@ -32,15 +33,192 @@ import {
 } from "lucide-react";
 import { AuthAlert } from "@/components/ui/auth-alert";
 import Link from "next/link";
-import { UserProfile, CartResponse } from "@/lib/types" 
+import { UserProfile, CartResponse } from "@/lib/types";
 import { avatarOptions } from "@/lib/arrays";
 
-export const ProfileSection = () => {
-  const [userDetail, setUserDetail] = useState<UserProfile | null>(null);
-  const [cartData, setCartData] = useState<CartResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState("overview");
+const StatCard = memo(({ icon, value, label, color }: {
+  icon: React.ReactNode;
+  value: string | number;
+  label: string;
+  color: string;
+}) => (
+  <Card>
+    <CardContent className="p-4 text-center">
+      <div className={`h-8 w-8 mx-auto mb-2 ${color}`}>{icon}</div>
+      <div className="text-2xl font-bold" aria-label={label}>
+        {value}
+      </div>
+      <div className="text-sm text-muted-foreground">{label}</div>
+    </CardContent>
+  </Card>
+));
+StatCard.displayName = "StatCard";
 
+const CartItem = memo(({ 
+  item, 
+  itemLoading, 
+  onUpdateQuantity, 
+  onRemoveFromCart 
+}: {
+  item: any;
+  itemLoading: string | null;
+  onUpdateQuantity: (id: string, quantity: number) => void;
+  onRemoveFromCart: (id: string) => void;
+}) => (
+  <Card key={item.cart_item_id}>
+    <CardContent className="p-4">
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <Link href={`/magaza/${item.product_id}`} prefetch={false}>
+          <Image
+            src={item.product_image || "/placeholder-product.jpg"}
+            alt={item.product_title}
+            width={64}
+            height={64}
+            className="w-24 h-24 sm:w-16 sm:h-16 object-cover rounded mx-auto"
+            loading="lazy"
+            sizes="(max-width: 640px) 96px, 64px"
+          />
+        </Link>
+        <div className="flex-1 w-full">
+          <h4 className="font-medium text-center sm:text-left" itemProp="name">
+            {item.product_title}
+          </h4>
+          <div className="space-y-1 text-sm text-muted-foreground mb-3">
+            <p>Varyete: {item.variant_data.size}</p>
+            <p>SKU: {item.variant_data.sku}</p>
+          </div>
+          <p className="font-medium text-center sm:text-left">
+            {item.unit_price.toFixed(2)} ₺
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onUpdateQuantity(item.cart_item_id, item.quantity - 1)}
+            disabled={item.quantity <= 1 || itemLoading === item.cart_item_id}
+            className="h-8 w-8 p-0"
+            aria-label="Adet Azalt"
+          >
+            <Minus className="h-3 w-3" />
+          </Button>
+          <span className="font-medium min-w-8 text-center" aria-label="Adet">
+            {item.quantity}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onUpdateQuantity(item.cart_item_id, item.quantity + 1)}
+            disabled={
+              item.quantity >= item.variant_stock ||
+              itemLoading === item.cart_item_id
+            }
+            className="h-8 w-8 p-0"
+            aria-label="Adet Arttır"
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+        </div>
+        <div className="text-right w-full sm:w-auto">
+          <div className="font-medium text-center sm:text-right">
+            {item.line_total.toFixed(2)} ₺
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onRemoveFromCart(item.cart_item_id)}
+            disabled={itemLoading === item.cart_item_id}
+            className="mt-2 text-red-600 hover:text-red-700 mx-auto sm:mx-0"
+            aria-label="Sepetten Kaldır"
+          >
+            {itemLoading === item.cart_item_id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+));
+CartItem.displayName = "CartItem";
+
+const AvatarSelector = memo(({ 
+  avatarOptions, 
+  editForm, 
+  userDetail, 
+  onSelectAvatar, 
+  onClose 
+}: {
+  avatarOptions: string[];
+  editForm: any;
+  userDetail: UserProfile;
+  onSelectAvatar: (avatar: string) => void;
+  onClose: () => void;
+}) => (
+  <Card className="p-4">
+    <div className="mb-3 flex items-center justify-between">
+      <h4 className="font-medium">Avatar Seç</h4>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onClose}
+        aria-label="Kapat"
+      >
+        ✕
+      </Button>
+    </div>
+    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+      {avatarOptions.map((avatar, index) => (
+        <div
+          key={index}
+          className="group relative flex flex-col sm:flex-row items-center justify-center sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 cursor-pointer"
+          onClick={() => onSelectAvatar(avatar)}
+          aria-label="Avatar Seçenekleri"
+        >
+          <div
+            className={`
+              relative w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center transition-all
+              ${
+                editForm.avatar_url === avatar
+                  ? "border-blue-500 ring-2 ring-blue-200"
+                  : "border-gray-200 hover:border-blue-300"
+              }
+            `}
+          >
+            <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
+              <AvatarImage
+                src={avatar}
+                alt={userDetail.profile?.full_name}
+                loading="lazy"
+              />
+              <AvatarFallback>
+                {userDetail.profile?.full_name
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .join("") || "K"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute inset-0 bg-black bg-opacity-10 rounded-full transition-all opacity-0 group-hover:opacity-100 pointer-events-none" />
+            {userDetail.profile.avatar_url === avatar && (
+              <div className="absolute inset-0 flex items-center justify-center bg-blue-500 bg-opacity-20 rounded-full">
+                <Check className="h-6 w-6 text-blue-600 bg-white rounded-full p-1" />
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+    <p className="text-xs text-muted-foreground mt-3 text-center">
+      Bir avatar seçmek için üzerine tıklayın, ardından değişiklikleri kaydedin.
+    </p>
+  </Card>
+));
+AvatarSelector.displayName = "AvatarSelector";
+
+export const ProfileSection = () => {
+  const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -48,13 +226,13 @@ export const ProfileSection = () => {
     full_name: "",
     avatar_url: "",
   });
-
   const [itemLoading, setItemLoading] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [showAlert, setShowAlert] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const queryClient = useQueryClient();
 
-  const showAlertMessage = (message: string) => {
+  const showAlertMessage = useCallback((message: string) => {
     setAlertMessage(message);
     setShowAlert(true);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -62,170 +240,153 @@ export const ProfileSection = () => {
       setShowAlert(false);
       setTimeout(() => setAlertMessage(null), 300);
     }, 4000);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
   }, []);
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, [supabase]);
-
-  useEffect(() => {
-    if (activeTab === "cart") {
-      fetchCartData();
-    }
-  }, [activeTab, supabase]);
-
-  const fetchUserProfile = async () => {
-    try {
-      setLoading(true);
+  const {
+    data: userDetail,
+    isLoading: loading,
+    error: profileError,
+  } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async (): Promise<UserProfile> => {
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        showAlertMessage("Giriş yapmanız gerekmektedir.");
-        return;
+        throw new Error("Giriş yapmanız gerekmektedir.");
       }
 
       const { data, error } = await supabase.rpc("get_user_profile");
 
       if (error) {
-        console.error("Profile fetch error:", error);
-        showAlertMessage("Profil yüklenemedi.");
-        return;
+        throw new Error("Profil yüklenemedi.");
       }
 
-      setUserDetail(data);
+      return data;
+    },
+    staleTime: 5 * 60 * 1000, 
+    gcTime: 10 * 60 * 1000, 
+    retry: 2,
+    refetchOnWindowFocus: false,
+  });
+
+  useState(() => {
+    if (userDetail) {
       setEditForm({
-        username: data.profile.username || "",
-        full_name: data.profile.full_name || "",
-        avatar_url: data.profile.avatar_url || "",
+        username: userDetail.profile.username || "",
+        full_name: userDetail.profile.full_name || "",
+        avatar_url: userDetail.profile.avatar_url || "",
       });
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      showAlertMessage("Beklenmeyen bir hata oluştu.");
-    } finally {
-      setLoading(false);
     }
-  };
+  });
 
-  const fetchCartData = async () => {
-    try {
+  const {
+    data: cartData,
+    isLoading: cartLoading,
+  } = useQuery({
+    queryKey: ['userCart'],
+    queryFn: async (): Promise<CartResponse> => {
       const { data, error } = await supabase.rpc("get_user_cart");
+      if (error) throw new Error("Sepet yüklenemedi.");
+      return data;
+    },
+    enabled: activeTab === 'cart',
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+    refetchOnWindowFocus: true,
+  });
 
-      if (error) {
-        console.error("Cart fetch error:", error);
-        return;
-      }
-
-      setCartData(data);
-    } catch (err) {
-      console.error("Cart fetch error:", err);
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    try {
-      setLoading(true);
-
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updateData: typeof editForm) => {
       const { error } = await supabase
         .from("profiles")
         .update({
-          username: editForm.username,
-          full_name: editForm.full_name,
-          avatar_url: editForm.avatar_url,
+          ...updateData,
           updated_at: new Date().toISOString(),
         })
         .eq("id", userDetail?.profile.id);
 
-      if (error) {
-        console.error("Update error:", error);
-        showAlertMessage("Profil güncellenemedi.");
-        return;
-      }
-
-      await fetchUserProfile();
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       setIsEditing(false);
       setShowAvatarSelector(false);
       showAlertMessage("Profil başarıyla güncellendi.");
-    } catch (err) {
-      console.error("Update error:", err);
+    },
+    onError: () => {
       showAlertMessage("Profil güncellenemedi.");
-    } finally {
-      setLoading(false);
     }
-  };
+  });
 
-  const handleSelectAvatar = (avatarUrl: string) => {
-    setEditForm((prev) => ({ ...prev, avatar_url: avatarUrl }));
-    setShowAvatarSelector(false);
-    showAlertMessage("Avatar seçildi! Değişiklikleri kaydetmeyi unutmayın.");
-  };
-
-  const handleRemoveFromCart = async (cart_item_id: string) => {
-    setItemLoading(cart_item_id);
-
-    try {
+  const removeCartItemMutation = useMutation({
+    mutationFn: async (cartItemId: string) => {
       const { error } = await supabase
         .from("cart_items")
         .delete()
-        .eq("id", cart_item_id);
-
-      if (error) {
-        console.error("Remove error:", error);
-        showAlertMessage("Ürün sepetten kaldırılamadı.");
-        return;
-      }
-
-      await fetchCartData();
-      await fetchUserProfile();
+        .eq("id", cartItemId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userCart'] });
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       showAlertMessage("Ürün sepetten kaldırıldı.");
-    } catch (err) {
-      console.error("Remove error:", err);
+    },
+    onError: () => {
       showAlertMessage("Ürün sepetten kaldırılamadı.");
-    } finally {
-      setItemLoading(null);
     }
-  };
+  });
 
-  const handleUpdateQuantity = async (
-    cart_item_id: string,
-    newQuantity: number
-  ) => {
-    if (newQuantity < 1) return;
-
-    setItemLoading(cart_item_id);
-
-    try {
+  const updateQuantityMutation = useMutation({
+    mutationFn: async ({ cartItemId, quantity }: { cartItemId: string; quantity: number }) => {
       const { error } = await supabase
         .from("cart_items")
-        .update({ quantity: newQuantity })
-        .eq("id", cart_item_id);
-
-      if (error) {
-        console.error("Update error:", error);
-        showAlertMessage("Adet güncellenemedi.");
-        return;
-      }
-
-      await fetchCartData();
-      await fetchUserProfile();
+        .update({ quantity })
+        .eq("id", cartItemId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userCart'] });
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       showAlertMessage("Adet güncellendi.");
-    } catch (err) {
-      console.error("Update error:", err);
+    },
+    onError: () => {
       showAlertMessage("Adet güncellenemedi.");
-    } finally {
-      setItemLoading(null);
     }
-  };
+  });
 
-  const getStatusColor = (status: string) => {
+  const handleSaveProfile = useCallback(() => {
+    updateProfileMutation.mutate(editForm);
+  }, [editForm, updateProfileMutation]);
+
+  const handleSelectAvatar = useCallback((avatarUrl: string) => {
+    setEditForm((prev) => ({ ...prev, avatar_url: avatarUrl }));
+    setShowAvatarSelector(false);
+    showAlertMessage("Avatar seçildi! Değişiklikleri kaydetmeyi unutmayın.");
+  }, [showAlertMessage]);
+
+  const handleRemoveFromCart = useCallback((cart_item_id: string) => {
+    setItemLoading(cart_item_id);
+    removeCartItemMutation.mutate(cart_item_id, {
+      onSettled: () => setItemLoading(null)
+    });
+  }, [removeCartItemMutation]);
+
+  const handleUpdateQuantity = useCallback((cart_item_id: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    
+    setItemLoading(cart_item_id);
+    updateQuantityMutation.mutate({ cartItemId: cart_item_id, quantity: newQuantity }, {
+      onSettled: () => setItemLoading(null)
+    });
+  }, [updateQuantityMutation]);
+
+  const getStatusColor = useCallback((status: string) => {
     switch (status.toLowerCase()) {
       case "completed":
         return "bg-green-100 text-green-800";
@@ -238,15 +399,19 @@ export const ProfileSection = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
-  };
+  }, []);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString("tr-TR", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
-  };
+  }, []);
+
+  if (profileError) {
+    showAlertMessage(profileError.message);
+  }
 
   if (loading && !userDetail) {
     return (
@@ -270,48 +435,56 @@ export const ProfileSection = () => {
     <div className="container mx-auto px-4 py-12 max-w-7xl">
       {/* Alert Message */}
       {alertMessage && (
-<div
-  className={`
-    fixed left-1/2 bottom-8 z-50
-    transform -translate-x-1/2
-    transition-all duration-300 ease-in-out
-    ${
-      showAlert
-        ? "opacity-100 translate-y-0"
-        : "opacity-0 translate-y-2"
-    }
-    w-full max-w-md px-4
-  `}
-  role="alert"
-  aria-live="assertive"
->
-  <Alert
-    className={`
-      shadow-lg
-      text-center
-      ${showAlert ? "animate-fade-in" : "animate-fade-out"}
-    `}
-    style={{
-      borderRadius: "0.75rem",
-    }}
-  >
-    <AlertDescription className="text-center font-medium">
-      {alertMessage}
-    </AlertDescription>
-  </Alert>
-</div>
+        <div
+          className={`
+            fixed left-1/2 bottom-8 z-50
+            transform -translate-x-1/2
+            transition-all duration-300 ease-in-out
+            ${
+              showAlert
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            }
+            w-full max-w-md px-4
+          `}
+          role="alert"
+          aria-live="assertive"
+        >
+          <Alert
+            className={`
+              shadow-lg
+              text-center
+              ${showAlert ? "animate-fade-in" : "animate-fade-out"}
+            `}
+            style={{
+              borderRadius: "0.75rem",
+            }}
+          >
+            <AlertDescription className="text-center font-medium">
+              {alertMessage}
+            </AlertDescription>
+          </Alert>
+        </div>
       )}
-
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold tracking-tight mb-4">Profil</h2>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          Kullanıcı bilgilerinizi güncellemek veya görüntülemek için aşağıdaki
+          alanları kullanabilirsiniz.
+        </p>
+      </div>
       {/* Profile Header */}
       <div className="text-center mb-8">
         <div className="relative inline-block mb-4">
-          <div className="w-24 h-24 rounded-full h-full w-full flex justify-center  items-center overflow-hidden bg-gray-200 mx-auto">
+          <div className="w-24 h-24 rounded-full h-full w-full flex justify-center items-center overflow-hidden bg-gray-200 mx-auto">
             {userDetail.profile.avatar_url ? (
               <div className="w-36 h-36 flex flex-col items-center justify-center">
                 <Avatar className="h-full w-full">
                   <AvatarImage
                     src={userDetail.profile.avatar_url}
                     alt={userDetail.profile.username}
+                    loading="eager"
+                    fetchPriority="high"
                   />
                   <AvatarFallback>
                     {userDetail.profile?.full_name
@@ -344,42 +517,30 @@ export const ProfileSection = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Package className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-            <div className="text-2xl font-bold" aria-label="Toplam Sipariş">
-              {userDetail.order_stats.total_orders}
-            </div>
-            <div className="text-sm text-muted-foreground">Toplam Sipariş</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <ShoppingCart className="h-8 w-8 mx-auto mb-2 text-green-600" />
-            <div className="text-2xl font-bold" aria-label="Sepet Ürünleri">
-              {userDetail.cart_summary.items_count}
-            </div>
-            <div className="text-sm text-muted-foreground">Sepetteki Ürünler</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <CreditCard className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-            <div className="text-2xl font-bold" aria-label="Toplam Harcama">
-              {userDetail.order_stats.lifetime_value.toFixed(0)} ₺
-            </div>
-            <div className="text-sm text-muted-foreground">Toplam Harcama</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Clock className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-            <div className="text-2xl font-bold" aria-label="Bekleyen Siparişler">
-              {userDetail.order_stats.pending_orders}
-            </div>
-            <div className="text-sm text-muted-foreground">Bekleyen Siparişler</div>
-          </CardContent>
-        </Card>
+        <StatCard
+          icon={<Package className="h-8 w-8" />}
+          value={userDetail.order_stats.total_orders}
+          label="Toplam Sipariş"
+          color="text-blue-600"
+        />
+        <StatCard
+          icon={<ShoppingCart className="h-8 w-8" />}
+          value={userDetail.cart_summary.items_count}
+          label="Sepetteki Ürünler"
+          color="text-green-600"
+        />
+        <StatCard
+          icon={<CreditCard className="h-8 w-8" />}
+          value={`${userDetail.order_stats.lifetime_value.toFixed(0)} ₺`}
+          label="Toplam Harcama"
+          color="text-purple-600"
+        />
+        <StatCard
+          icon={<Clock className="h-8 w-8" />}
+          value={userDetail.order_stats.pending_orders}
+          label="Bekleyen Siparişler"
+          color="text-orange-600"
+        />
       </div>
 
       {/* Tabs */}
@@ -532,17 +693,15 @@ export const ProfileSection = () => {
 
         {/* Cart Tab */}
         <TabsContent value="cart" className="space-y-6">
-          {!cartData ? (
+          {cartLoading ? (
             <div className="flex justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          ) : cartData.cart_items.length === 0 ? (
+          ) : !cartData || cartData.cart_items.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
                 <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  Sepetiniz boş
-                </h3>
+                <h3 className="text-lg font-semibold mb-2">Sepetiniz boş</h3>
                 <p className="text-muted-foreground">
                   Sepetinize ürün eklediğinizde burada görebilirsiniz.
                 </p>
@@ -551,95 +710,13 @@ export const ProfileSection = () => {
           ) : (
             <div className="space-y-4">
               {cartData.cart_items.map((item) => (
-                <Card key={item.cart_item_id}>
-                  <CardContent className="p-4">
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                      <Link href={`/magaza/${item.product_id}`}>
-                      <Image
-                        src={item.product_image || "/placeholder-product.jpg"}
-                        alt={item.product_title}
-                        width={64}
-                        height={64}
-                        className="w-24 h-24 sm:w-16 sm:h-16 object-cover rounded mx-auto"
-                        />
-                        </Link>
-                      <div className="flex-1 w-full">
-                        <h4 className="font-medium text-center sm:text-left" itemProp="name">{item.product_title}</h4>
-                        <div className="space-y-1 text-sm text-muted-foreground mb-3">
-                          <p>Varyete: {item.variant_data.size}</p>
-                          <p>SKU: {item.variant_data.sku}</p>
-                        </div>
-                        <p className="font-medium text-center sm:text-left">
-                          {item.unit_price.toFixed(2)} ₺
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleUpdateQuantity(
-                              item.cart_item_id,
-                              item.quantity - 1
-                            )
-                          }
-                          disabled={
-                            item.quantity <= 1 ||
-                            itemLoading === item.cart_item_id
-                          }
-                          className="h-8 w-8 p-0"
-                          aria-label="Adet Azalt"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-
-                        <span className="font-medium min-w-8 text-center" aria-label="Adet">
-                          {item.quantity}
-                        </span>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleUpdateQuantity(
-                              item.cart_item_id,
-                              item.quantity + 1
-                            )
-                          }
-                          disabled={
-                            item.quantity >= item.variant_stock ||
-                            itemLoading === item.cart_item_id
-                          }
-                          className="h-8 w-8 p-0"
-                          aria-label="Adet Arttır"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <div className="text-right w-full sm:w-auto">
-                        <div className="font-medium text-center sm:text-right">
-                          {item.line_total.toFixed(2)} ₺
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleRemoveFromCart(item.cart_item_id)
-                          }
-                          disabled={itemLoading === item.cart_item_id}
-                          className="mt-2 text-red-600 hover:text-red-700 mx-auto sm:mx-0"
-                          aria-label="Sepetten Kaldır"
-                        >
-                          {itemLoading === item.cart_item_id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CartItem
+                  key={item.cart_item_id}
+                  item={item}
+                  itemLoading={itemLoading}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  onRemoveFromCart={handleRemoveFromCart}
+                />
               ))}
 
               <Card>
@@ -648,7 +725,7 @@ export const ProfileSection = () => {
                     <span className="text-lg font-semibold">
                       Toplam: {cartData.total.toFixed(2)} ₺
                     </span>
-                    <Link href="/sepet" className="inline-block">
+                    <Link href="/sepet" prefetch={false} className="inline-block">
                       <Button aria-label="Ödeme Adımına Geç">Ödeme Yap</Button>
                     </Link>
                   </div>
@@ -686,7 +763,7 @@ export const ProfileSection = () => {
                   <div className="w-22 h-22 rounded-full overflow-hidden bg-gray-200">
                     {editForm.avatar_url ? (
                       <Avatar className="h-full w-full">
-                        <AvatarImage src={editForm.avatar_url} alt="Avatar" />
+                        <AvatarImage src={editForm.avatar_url} alt="Avatar" loading="lazy" />
                         <AvatarFallback>
                           {userDetail.profile?.full_name
                             ?.split(" ")
@@ -721,63 +798,13 @@ export const ProfileSection = () => {
 
               {/* Avatar Selector */}
               {isEditing && showAvatarSelector && (
-                <Card className="p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h4 className="font-medium">Avatar Seç</h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAvatarSelector(false)}
-                      aria-label="Kapat"
-                    >
-                      ✕
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                    {avatarOptions.map((avatar, index) => (
-                      <div
-                        key={index}
-                        className="group relative flex flex-col sm:flex-row items-center justify-center sm:items-center space-y-3 sm:space-y-0 sm:space-x-4"
-                        onClick={() => handleSelectAvatar(avatar)}
-                        aria-label="Avatar Seçenekleri"
-                      >
-                        <div
-                          className={`
-      relative w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center transition-all
-      ${
-        editForm.avatar_url === avatar
-          ? "border-blue-500 ring-2 ring-blue-200"
-          : "border-gray-200 hover:border-blue-300"
-      }
-    `}
-                        >
-                          <Avatar className="h-16 w-16 sm:h-20 sm:w-20 cursor-pointer">
-                            <AvatarImage
-                              src={avatar}
-                              alt={userDetail.profile?.full_name}
-                            />
-                            <AvatarFallback>
-                              {userDetail.profile?.full_name
-                                ?.split(" ")
-                                .map((n) => n[0])
-                                .join("") || "K"}
-                            </AvatarFallback>
-                          </Avatar>
-                          {/* Only show overlay on hover */}
-                          <div className="absolute inset-0 bg-black bg-opacity-10 rounded-full transition-all opacity-0 group-hover:opacity-100 pointer-events-none" />
-                          {userDetail.profile.avatar_url === avatar && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-blue-500 bg-opacity-20 rounded-full">
-                              <Check className="h-6 w-6 text-blue-600 bg-white rounded-full p-1" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3 text-center">
-                    Bir avatar seçmek için üzerine tıklayın, ardından değişiklikleri kaydedin.
-                  </p>
-                </Card>
+                <AvatarSelector
+                  avatarOptions={avatarOptions}
+                  editForm={editForm}
+                  userDetail={userDetail}
+                  onSelectAvatar={handleSelectAvatar}
+                  onClose={() => setShowAvatarSelector(false)}
+                />
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -837,8 +864,12 @@ export const ProfileSection = () => {
                   >
                     İptal Et
                   </Button>
-                  <Button onClick={handleSaveProfile} disabled={loading} aria-label="Kaydet">
-                    {loading ? (
+                  <Button 
+                    onClick={handleSaveProfile} 
+                    disabled={updateProfileMutation.isPending} 
+                    aria-label="Kaydet"
+                  >
+                    {updateProfileMutation.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Kaydediliyor...

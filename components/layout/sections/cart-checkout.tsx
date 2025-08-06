@@ -10,7 +10,7 @@ import Link from "next/link";
 import { AuthAlert } from "@/components/ui/auth-alert";
 import { CartResponse } from "@/lib/types";
 import Image from "next/image";
-export const CheckoutPage = () => {
+export const CheckoutSection = () => {
   const params = useParams();
   const [cart, setCart] = useState<CartResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -234,7 +234,7 @@ export const CheckoutPage = () => {
   }
   if (!cart || cart.cart_items.length === 0 || !user) {
     return (
-      <section className="container mx-auto px-4 py-32 max-w-6xl">
+      <section className="container">
         <Alert className="text-center py-12">
           <AlertDescription>
             <div className="flex flex-col justify-center w-full items-center space-y-4">
@@ -243,7 +243,7 @@ export const CheckoutPage = () => {
               <p className="text-muted-foreground max-w-md">
                 Harika ürünleri keşfedin ve alışverişe başlamak için sepetinize ekleyin.
               </p>
-              <Link href="/magaza?page=1&limit=12">
+              <Link href="/magaza"  prefetch={true}>
                 <Button className="mt-4">
                   Alışverişe Devam Et
                 </Button>
@@ -277,13 +277,12 @@ export const CheckoutPage = () => {
       )}
 
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">Alışveriş Sepeti</h1>
-        <p className="text-muted-foreground">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold tracking-tight mb-4">Alışveriş Sepeti</h2>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
           {cart.summary.items_count} ürün sepetinizde
         </p>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
@@ -293,7 +292,7 @@ export const CheckoutPage = () => {
                 <div className="flex flex-col sm:flex-row">
                   {/* Product Image */}
                   <div className="sm:w-32 sm:h-32 w-full h-48 relative overflow-hidden">
-                                          <Link href={`/magaza/${item.product_id}`}>
+                                          <Link href={`/magaza/${item.product_id}`}  prefetch={true}>
 
                     <Image
                       src={item.product_image || "/placeholder-product.jpg"}
@@ -461,7 +460,7 @@ export const CheckoutPage = () => {
                   "Siparişi Tamamla"
                 )}
               </Button>
-              <Link href="/magaza?page=1&limit=12">
+              <Link href="/magaza"  prefetch={true}>
                 <Button variant="outline" size="sm" className="w-full" aria-label="Alışverişe Devam Et">
                   Alışverişe Devam Et
                 </Button>

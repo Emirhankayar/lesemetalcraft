@@ -1,4 +1,4 @@
-import { ProfileSection } from "@/components/layout/sections/user-profile";
+import ProfilePage from "@/components/layout/profile-page";
 export const metadata = {
   title: "Profilim - LESE Metalcraft",
   description: "LESE Metalcraft profil sayfanız. Hesap bilgilerinizi güncelleyin, sipariş geçmişinizi görüntüleyin.",
@@ -21,7 +21,7 @@ export const metadata = {
 export default function Profile() {
   return (
     <>   
-        <ProfileSection />
+        <ProfilePage />
     </>
     );
 };

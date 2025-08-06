@@ -122,3 +122,17 @@ html {
     @apply bg-background text-foreground;
   }
 }
+/* Add these to your globals.css */
+.loading-hidden {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.loading-visible {
+  opacity: 1;
+}
+
+/* Optimize font rendering */
+html {
+  font-display: swap;
+}
