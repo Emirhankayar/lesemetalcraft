@@ -103,9 +103,13 @@ export const useProductLike = ({
     },
     onSuccess: (like) => {
       queryClient.invalidateQueries({ queryKey: ["productDetail", productId] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       onSuccess?.(like);
     },
-    onError: () => onError?.(),
+    onError: (error) => {
+      console.error("Like mutation error:", error);
+      onError?.();
+    },
   });
 };
 
@@ -127,22 +131,36 @@ export const useAddToCart = ({
       variantId,
       quantity,
     }: {
-      variantId?: number;
+      variantId?: string | number;
       quantity: number;
     }) => {
+      
+      if (!variantId) {
+        throw new Error("Variant ID is required");
+      }
+      
       const { data, error } = await supabase.rpc("add_to_cart", {
         product_uuid: productId,
         variant_id_param: variantId,
         quantity_param: quantity,
       });
-      if (error || !data?.success) throw error || new Error(data?.error);
+      
+      
+      if (error || !data?.success) {
+        throw error || new Error(data?.error || "Unknown error occurred");
+      }
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["productDetail", productId] });
+      queryClient.invalidateQueries({ queryKey: ["userCart"] });
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
       onSuccess?.();
     },
-    onError: () => onError?.(),
+    onError: (error) => {
+      console.error("Add to cart error:", error);
+      onError?.();
+    },
   });
 };
 
@@ -172,14 +190,13 @@ export async function getShopPageMetadata(page?: number, limit?: number) {
 }
 
 export async function getProductMetadata(productId: string) {
-  console.log("Fetching metadata for product:", productId);
 
   try {
     const { data, error } = await supabase.rpc("get_product_detail", {
       product_uuid: productId,
     });
 
-    console.log("Supabase response:", { data, error });
+
 
     if (error) {
       console.error("Supabase error:", error);
@@ -187,15 +204,12 @@ export async function getProductMetadata(productId: string) {
     }
 
     if (!data) {
-      console.log("No data returned from Supabase");
       return null;
     }
 
     const product = data.product;
-    console.log("Product data:", product);
 
     if (!product) {
-      console.log("No product in data");
       return null;
     }
 
@@ -231,7 +245,6 @@ export async function getProductMetadata(productId: string) {
         : "out_of_stock",
     };
 
-    console.log("Generated metadata:", result);
     return result;
   } catch (error) {
     console.error("Error fetching product metadata:", error);

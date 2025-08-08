@@ -47,14 +47,16 @@ const ProductDetailPage = () => {
   const likeMutation = useProductLike({
     productId,
     onSuccess: (liked) => {
-      setIsLiked(liked);
       setAlertMessage(
         liked
           ? "Beğendiğiniz ürünlere eklendi."
           : "Beğendiğiniz ürünlerden kaldırıldı."
       );
     },
-    onError: () => setAlertMessage("Beğeni güncellenemedi. Lütfen tekrar deneyin.")
+    onError: () => {
+      setIsLiked(!isLiked);
+      setAlertMessage("Beğeni güncellenemedi. Lütfen tekrar deneyin.");
+    }
   });
 
   const addToCartMutation = useAddToCart({
@@ -67,12 +69,24 @@ const ProductDetailPage = () => {
 
   useEffect(() => {
     if (productDetail?.product?.variants?.variants) {
-      const defaultVariant = productDetail.product.variants.variants.find(
+      const variants = productDetail.product.variants.variants;
+      console.log("Available variants:", variants);
+      
+      const defaultVariant = variants.find(
         (v: ProductVariant) => v.is_default
       );
-      setSelectedVariant(
-        defaultVariant || productDetail.product.variants.variants[0]
-      );
+      const selectedVar = defaultVariant || variants[0];
+      
+      console.log("Selected variant:", selectedVar);
+      setSelectedVariant(selectedVar);
+    }
+    
+    if (productDetail?.product) {
+      setIsLiked(productDetail.product.user_has_liked || false);
+    }
+    
+    if (productDetail?.comments) {
+      setComments(productDetail.comments);
     }
   }, [productDetail]);
 
@@ -91,24 +105,56 @@ const ProductDetailPage = () => {
   }, [alertMessage]);
 
   const handleLike = () => {
+    console.log("handleLike called", { 
+      productId, 
+      userAuthenticated: productDetail?.user_authenticated,
+      currentLikedState: isLiked 
+    });
+    
     if (!productDetail?.user_authenticated) {
       setAlertMessage("Ürünleri beğenmek için lütfen giriş yapın.");
       return;
     }
-    likeMutation.mutate(!isLiked);
+    
+    const newLikedState = !isLiked;
+    setIsLiked(newLikedState);
+    
+    likeMutation.mutate(newLikedState);
   };
 
   const handleAddToCart = () => {
+    console.log("handleAddToCart called", { 
+      productId, 
+      selectedVariant,
+      quantity,
+      userAuthenticated: productDetail?.user_authenticated,
+      variantId: selectedVariant?.id,
+      variantIdType: typeof selectedVariant?.id
+    });
+    
     if (!productDetail?.user_authenticated) {
       setAlertMessage("Sepete eklemek için lütfen giriş yapın.");
       return;
     }
+    
     if (!selectedVariant) {
       setAlertMessage("Lütfen bir varyant seçin.");
       return;
     }
+    
+    if (!selectedVariant.id) {
+      setAlertMessage("Varyant ID'si bulunamadı.");
+      console.error("Missing variant ID:", selectedVariant);
+      return;
+    }
+    
+    if (selectedVariant.stock <= 0) {
+      setAlertMessage("Bu ürün stokta bulunmamaktadır.");
+      return;
+    }
+    
     addToCartMutation.mutate({ 
-      variantId: Number(selectedVariant.id), 
+      variantId: selectedVariant.id,
       quantity 
     });
   };
