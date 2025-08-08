@@ -1,9 +1,7 @@
 "use client";
 import { useMemo, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/sbClient";
-import { ProductsResponse } from "@/lib/types";
+import { useShopProducts } from "@/data/loaders";
 
 import dynamic from "next/dynamic";
 import { PopularProductsSkeleton, ProductCardSkeleton, PaginationControlsSkeleton } from "@/components/alerts/skeletons";
@@ -35,21 +33,9 @@ const ShopPageContent = () => {
     [searchParams]
   );
 
-  const { data: products, isLoading, error } = useQuery<ProductsResponse>({
-    queryKey: ["products", currentPage, pageSize],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_shop_products", {
-        page_limit: pageSize,
-        page_offset: currentPage * pageSize,
-      });
-      if (error) throw error;
-      return data;
-    },
-    placeholderData: keepPreviousData,
-    staleTime: 5 * 60 * 1000, 
-    gcTime: 10 * 60 * 1000, 
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+  const { data: products, isLoading, error } = useShopProducts({ 
+    currentPage, 
+    pageSize 
   });
 
   const productsList = products?.products ?? [];

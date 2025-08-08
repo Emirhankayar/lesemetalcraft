@@ -1,102 +1,92 @@
 import { Metadata } from "next";
-import { supabase } from "@/lib/sbClient";
+import { getProductMetadata } from "@/data/loaders";
 import ProductDetailPage from "@/components/pages/product/ProductPage";
 
-const createProductMetadata = (productName: string, productDescription: string, productId: string) => {
-  const title = `${productName} - LESE Metalcraft`;
-  const description = `${productDescription} | LESE Metalcraft hassas metal işleme ürünleri.`;
-  const url = `https://lesemetalcraft.com/magaza/${productId}`;
+interface Props {
+  params: Promise<{ productId: string }>;
+}
 
-  return {
-    title,
-    description,
-    keywords: [
-      productName,
-      "LESE Metalcraft",
-      "hassas metal işleme",
-      "endüstriyel ürünler",
-      "özel üretim",
-      "metal parçalar"
-    ].join(", "),
+interface ImageMetadata {
+  url: string;
+  width: number;
+  height: number;
+  alt: string;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { productId } = await params;
+
+  const metadata = await getProductMetadata(productId);
+
+  if (!metadata) {
+    console.log("No metadata found");
+    return {
+      title: "Ürün Bulunamadı - LESE Metalcraft",
+      description: "Aradığınız ürün bulunamadı.",
+    };
+  }
+
+  console.log("Metadata title:", metadata.title);
+
+  const baseMetadata: Metadata = {
+    title: metadata.title || "LESE Metalcraft",
+    description: metadata.description || "LESE Metalcraft ürün sayfası",
+    keywords: metadata.keywords,
     openGraph: {
+      title: metadata.title || "LESE Metalcraft",
+      description: metadata.description || "LESE Metalcraft ürün sayfası",
       type: "website",
-      url,
-      title,
-      description,
-      images: [
-        {
-          url: "https://www.lesemetalcraft.com/android-chrome-512x512.png",
-          width: 512,
-          height: 512,
-          alt: `${productName} - LESE Metalcraft`,
-        },
-      ],
+      url: `https://lesemetalcraft.com/magaza/${productId}`,
       siteName: "LESE Metalcraft",
-      locale: "tr_TR",
+      images:
+        metadata.images?.map((img: ImageMetadata) => ({
+          url: img.url,
+          width: img.width,
+          height: img.height,
+          alt: img.alt,
+        })) || [],
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
-      images: ["https://www.lesemetalcraft.com/android-chrome-512x512.png"],
-      creator: "@lesemetalcraft",
-      site: "@lesemetalcraft",
+      title: metadata.title || "LESE Metalcraft",
+      description: metadata.description || "LESE Metalcraft ürün sayfası",
+      images: metadata.images?.map((img: ImageMetadata) => img.url) || [],
     },
-    alternates: {
-      canonical: url,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
-robots: {
-  index: true,
-  follow: true,
-  googleBot: {
-    index: true,
-    follow: true,
-    maxVideoPreview: -1,
-    maxImagePreview: "large", 
-    maxSnippet: -1,
-  },
-},
-
   };
-};
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ productId: string }> }
-): Promise<Metadata> {
-  const resolvedParams = await params;
-
-  try {
-    const { data } = await supabase.rpc('get_product_with_details', {
-      product_uuid: resolvedParams.productId,
-      user_uuid: null,
-      comments_limit: 0
-    });
-
-    if (data?.product) {
-      return createProductMetadata(
-        data.product.name,
-        data.product.description,
-        resolvedParams.productId
-      );
-    }
-  } catch (error) {
-    console.error('Error fetching product for metadata:', error);
+  if (metadata.price && metadata.currency) {
+    baseMetadata.other = {
+      "product:price:amount": metadata.price.toString(),
+      "product:price:currency": metadata.currency,
+      "product:availability": metadata.availability || "in_stock",
+    };
   }
 
-  return createProductMetadata(
-    "Ürün Detayı",
-    "LESE Metalcraft kaliteli metal işleme ürünleri ve özel üretim çözümleri",
-    resolvedParams.productId
-  );
+  return baseMetadata;
 }
 
-export default function Shop() {
+export default async function ProductPage({ params }: Props) {
   return (
-    
     <div className="container">
-      <section id="product" className="flex flex-col py-32 mx-auto max-w-6xl" aria-label="Ürün Detayları">
+      <section
+        id="product"
+        className="flex flex-col py-32 mx-auto max-w-6xl"
+        aria-label="Ürün Detayları"
+      >
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">Ürün Detayları</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-4">
+            Ürün Detayları
+          </h2>
         </div>
         <ProductDetailPage />
       </section>

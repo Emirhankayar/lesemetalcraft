@@ -1,11 +1,10 @@
 "use client";
 import { memo } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { supabase } from "@/lib/sbClient";
+import { usePopularProducts } from "@/data/loaders";
 import { TrendingUp } from "lucide-react";
 import Link from "next/link";
 import Autoplay from "embla-carousel-autoplay";
-import  OptimizedImage from "@/components/ui/optimized-image";
+import OptimizedImage from "@/components/ui/optimized-image";
 import {
   Carousel,
   CarouselContent,
@@ -14,6 +13,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { PopularProductsSkeleton } from "@/components/alerts/skeletons";
+
 const PopularProductItem = memo(
   ({
     product,
@@ -35,7 +35,7 @@ const PopularProductItem = memo(
           aria-label={`${product.title} ürün detayına git`}
         >
           <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden mb-2">
-            < OptimizedImage
+            <OptimizedImage
               src={product.image}
               alt={product.title}
               isLCP={isLCP}
@@ -70,23 +70,9 @@ const PopularProducts = memo(
       stopOnFocusIn: true,
     });
 
-    const { data: popular = [] } = useQuery<any[]>({
-      queryKey: ["popularProducts", maxResults],
-      queryFn: async () => {
-        const { data } = await supabase.rpc("get_popular_simple", {
-          max_results: maxResults,
-        });
-        return data?.products || [];
-      },
-      staleTime: 10 * 60 * 1000,
-      gcTime: 15 * 60 * 1000,
-      placeholderData: keepPreviousData, 
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true
-    });
+    const { data: popular = [], isLoading } = usePopularProducts({ maxResults });
 
-
-    if (popular.length === 0) {
+    if (isLoading || popular.length === 0) {
       return <PopularProductsSkeleton />;
     }
 

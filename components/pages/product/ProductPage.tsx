@@ -5,10 +5,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { ProductVariant, Comment } from "@/lib/types";
 import dynamic from "next/dynamic";
-import { supabase } from "@/lib/sbClient";
 import { ProductDisplaySkeleton, ProductCommentsSkeleton } from "@/components/alerts/skeletons";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useInView } from 'react-intersection-observer';
+import { useProductDetail, useProductLike, useAddToCart } from "@/data/loaders";
 
 const ProductDisplay = dynamic(() => import("@/components/sections/product/product-section"), {
   loading: () => <ProductDisplaySkeleton />,
@@ -30,8 +29,8 @@ const ProductDetailPage = () => {
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [showAlert, setShowAlert] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const queryClient = useQueryClient();
 
   const { ref: commentsRef, inView: commentsInView } = useInView({
     triggerOnce: true,
@@ -43,29 +42,30 @@ const ProductDetailPage = () => {
     data: productDetail,
     isLoading: loading,
     refetch,
-  } = useQuery({
-    queryKey: ["productDetail", productId],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_product_detail", {
-        product_uuid: productId,
-      });
-      if (error) throw error;
-      return data;
+  } = useProductDetail({ productId });
+
+  const likeMutation = useProductLike({
+    productId,
+    onSuccess: (liked) => {
+      setIsLiked(liked);
+      setAlertMessage(
+        liked
+          ? "Beğendiğiniz ürünlere eklendi."
+          : "Beğendiğiniz ürünlerden kaldırıldı."
+      );
     },
-    enabled: !!productId,
-    placeholderData: keepPreviousData, 
-    staleTime: 5 * 60 * 1000, 
-    gcTime: 10 * 60 * 1000, 
-    retry: 2,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: 'always'
+    onError: () => setAlertMessage("Beğeni güncellenemedi. Lütfen tekrar deneyin.")
   });
 
-  const [comments, setComments] = useState<Comment[]>([]);
-  
+  const addToCartMutation = useAddToCart({
+    productId,
+    onSuccess: () => {
+      setAlertMessage(`Başarıyla ${quantity} adet ürün sepete eklendi!`);
+    },
+    onError: () => setAlertMessage("Ürün sepete eklenemedi. Lütfen tekrar deneyin.")
+  });
+
   useEffect(() => {
-    setComments(productDetail?.comments || []);
-    setIsLiked(productDetail?.product?.user_has_liked || false);
     if (productDetail?.product?.variants?.variants) {
       const defaultVariant = productDetail.product.variants.variants.find(
         (v: ProductVariant) => v.is_default
@@ -90,47 +90,6 @@ const ProductDetailPage = () => {
     };
   }, [alertMessage]);
 
-  const likeMutation = useMutation({
-    mutationFn: async (like: boolean) => {
-      const { error } = await supabase.rpc(
-        like ? "like_product" : "unlike_product",
-        {
-          product_uuid: productId,
-        }
-      );
-      if (error) throw error;
-    },
-    onSuccess: (_, like) => {
-      queryClient.invalidateQueries({ queryKey: ["productDetail", productId] });
-      setIsLiked(like);
-      setAlertMessage(
-        like
-          ? "Beğendiğiniz ürünlere eklendi."
-          : "Beğendiğiniz ürünlerden kaldırıldı."
-      );
-    },
-    onError: () =>
-      setAlertMessage("Beğeni güncellenemedi. Lütfen tekrar deneyin."),
-  });
-
-  const addToCartMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.rpc("add_to_cart", {
-        product_uuid: productId,
-        variant_id_param: selectedVariant?.id,
-        quantity_param: quantity,
-      });
-      if (error || !data?.success) throw error || new Error(data?.error);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["productDetail", productId] });
-      setAlertMessage(`Başarıyla ${quantity} adet ürün sepete eklendi!`);
-    },
-    onError: () =>
-      setAlertMessage("Ürün sepete eklenemedi. Lütfen tekrar deneyin."),
-  });
-
   const handleLike = () => {
     if (!productDetail?.user_authenticated) {
       setAlertMessage("Ürünleri beğenmek için lütfen giriş yapın.");
@@ -148,7 +107,10 @@ const ProductDetailPage = () => {
       setAlertMessage("Lütfen bir varyant seçin.");
       return;
     }
-    addToCartMutation.mutate();
+    addToCartMutation.mutate({ 
+      variantId: Number(selectedVariant.id), 
+      quantity 
+    });
   };
 
   const product = productDetail?.product;
