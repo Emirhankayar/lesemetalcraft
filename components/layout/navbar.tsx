@@ -133,7 +133,7 @@ const renderMobileAuthContent = () => {
   return user ? (
     <div className="mx-4">
       <Button onClick={handleSignOut} variant="outline" className="text-xs justify-start w-full" disabled={loading}>
-        <LogOut className="size-5 text-red-500 hover:text-red-700 transition-colors mr-2" />
+        <LogOut className="size-5 text-red-500 hover:text-red-700 transition-colors" />
         {loading ? "Çıkış yapılıyor..." : "Çıkış Yap"}
       </Button>
     </div>
@@ -141,7 +141,7 @@ const renderMobileAuthContent = () => {
     <div className="mx-4">
       <Link href="/auth"  prefetch={true} className="w-full">
         <Button variant="outline" className="text-xs justify-start w-full" disabled={loading}>
-          <LogIn className="size-5 text-blue-500 hover:text-blue-700 transition-colors mr-2" />
+          <LogIn className="size-5 text-blue-500 hover:text-blue-700 transition-colors" />
           {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
         </Button>
       </Link>
@@ -167,21 +167,22 @@ const renderMobileAuthContent = () => {
           </SheetTrigger>
           <SheetContent 
             side="left" 
-            className="flex flex-col justify-between rounded-tr-2xl rounded-br-2xl bg-card border-secondary"
+            className="flex flex-col h-full rounded-tr-2xl rounded-br-2xl bg-card border-secondary overflow-hidden"
           >
-            <SheetHeader className="mb-4 ml-4">
+            <SheetHeader className="mb-4 ml-4 flex-shrink-0">
               <SheetTitle>
                 <Link href="/"  prefetch={true} className="flex items-center">
                   <img src="/g14.svg" alt="LESE logo" width={80} height={80} className="ml-4 w-20 h-20"/>
                 </Link>
               </SheetTitle>
               <SheetDescription>
-                Site navigasyon menüsü - Sayfalar arasında gezinmek için menü öğelerini kullanın
+                Menü - Sayfalar arasında gezinmek için menü öğelerini kullanın
               </SheetDescription>
             </SheetHeader>
             
-            <div className="flex-1 flex flex-col">
-              <div className="flex flex-col gap-2 mx-4">
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+              <div className="flex flex-col gap-2 mx-4 pb-4">
                 {isInitialized && user && (
                   <div className="px-4 py-4 border-b border-gray-300 text-md">
                     {user.email}
@@ -207,7 +208,7 @@ const renderMobileAuthContent = () => {
               </div>
             </div>
             
-            <SheetFooter className="flex-col justify-start items-start">
+            <SheetFooter className="flex-col justify-start items-start flex-shrink-0 mt-auto">
               <Separator className="mb-2" />
               <ToggleTheme />
             </SheetFooter>
