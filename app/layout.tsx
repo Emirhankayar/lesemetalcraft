@@ -4,7 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/Navbar";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { FooterSection } from "@/components/layout/Footer";
+import { Footer } from "@/components/layout/Footer";
 import type { Viewport } from "next";
 import QueryProvider from '@/components/providers/query-provider'
 
@@ -177,7 +177,7 @@ export default function RootLayout({
           <Navbar />
           <main>{children}</main>
           <div className="my-32">
-            <FooterSection />
+            <Footer />
           </div>
         </ThemeProvider>
           </QueryProvider>

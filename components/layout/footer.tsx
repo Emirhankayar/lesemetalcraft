@@ -1,6 +1,6 @@
 import { Separator } from "@/components/ui/separator";
 
-export const FooterSection = () => {
+export const Footer = () => {
   return (
     <footer id="footer" className="container py-24 sm:py-32">
         <Separator className="my-6" />
