@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/sbClient";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { BrandingSlideComponent } from "@/components/layout/sections/branding-slide";
 
 export default function AuthSection() {
   const router = useRouter();
@@ -119,7 +118,6 @@ export default function AuthSection() {
  }}
           />
         )}
-        <BrandingSlideComponent />
       </div>
     </section>
   );

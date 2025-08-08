@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { supabase } from "@/lib/sbClient";
-import ProductDetailPage from "@/components/layout/product-page";
+import ProductDetailPage from "@/components/pages/product/ProductPage";
 
 const createProductMetadata = (productName: string, productDescription: string, productId: string) => {
   const title = `${productName} - LESE Metalcraft`;
@@ -92,8 +92,14 @@ export async function generateMetadata(
 
 export default function Shop() {
   return (
-    <>
-      <ProductDetailPage />
-    </>
+    
+    <div className="container">
+      <section id="product" className="flex flex-col py-32 mx-auto max-w-6xl" aria-label="Ürün Detayları">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold tracking-tight mb-4">Ürün Detayları</h2>
+        </div>
+        <ProductDetailPage />
+      </section>
+    </div>
   );
 }

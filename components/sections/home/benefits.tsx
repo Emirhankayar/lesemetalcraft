@@ -35,7 +35,7 @@ const benefitList: BenefitsProps[] = [
   },
 ];
 
-export const BenefitsSection = () => {
+const BenefitsSection = () => {
   return (
     <section
       id="about"
@@ -92,3 +92,4 @@ export const BenefitsSection = () => {
     </section>
   );
 };
+export default BenefitsSection;

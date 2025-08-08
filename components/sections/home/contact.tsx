@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ContactFormData, ContactFormErrors } from "@/lib/types";
 
-export const ContactSection = () => {
+const ContactSection = () => {
   const [formData, setFormData] = useState<ContactFormData>({
     firstName: "",
     lastName: "",
@@ -319,3 +319,5 @@ export const ContactSection = () => {
     </section>
   );
 };
+
+export default ContactSection;

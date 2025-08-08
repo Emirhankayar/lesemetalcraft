@@ -1,4 +1,4 @@
-import CheckoutPage from '@/components/layout/cart-page';
+import CheckoutPage from '@/components/pages/cart/CartPage';
 export const metadata = {
   title: "Sepetim - LESE Metalcraft",
   description: "LESE Metalcraft alışveriş sepetiniz. Seçtiğiniz ürünleri gözden geçirin ve siparişinizi tamamlayın.",

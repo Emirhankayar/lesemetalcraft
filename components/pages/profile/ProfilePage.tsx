@@ -1,4 +1,4 @@
-import { ProfileSection } from "@/components/layout/sections/user-profile";
+import { ProfileSection } from "@/components/sections/profile/user-profile";
 
 export default function ProfilePage() {
   return (

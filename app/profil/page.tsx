@@ -1,4 +1,4 @@
-import ProfilePage from "@/components/layout/profile-page";
+import ProfilePage from "@/components/pages/profile/ProfilePage";
 export const metadata = {
   title: "Profilim - LESE Metalcraft",
   description: "LESE Metalcraft profil sayfanız. Hesap bilgilerinizi güncelleyin, sipariş geçmişinizi görüntüleyin.",

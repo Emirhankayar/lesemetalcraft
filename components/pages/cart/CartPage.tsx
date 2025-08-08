@@ -1,4 +1,4 @@
-import { CheckoutSection } from "@/components/layout/sections/cart-checkout";
+import { CheckoutSection } from "@/components/sections/cart/cart-checkout";
 
 export default function CheckoutPage() {
   return (

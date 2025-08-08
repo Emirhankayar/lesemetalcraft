@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useState, memo } from "react";
+import { memo } from "react";
 import {
   Card,
   CardContent,
@@ -12,69 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Heart, ShoppingCart, Star, MessageCircle } from "lucide-react";
 import { ProductCardProps } from "@/lib/types";
-
-interface ProductImageProps {
-  src: string;
-  alt: string;
-  isLCP?: boolean;
-  className?: string;
-}
-
-const ProductImage = memo(({ 
-  src, 
-  alt, 
-  isLCP = false, 
-  className = "" 
-}: ProductImageProps) => {
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  if (imageError) {
-    return (
-      <div className="w-full h-full bg-muted flex items-center justify-center" aria-label="Resim Yok" role="img">
-        <Eye className="h-12 w-12 text-muted-foreground" aria-hidden="true" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative w-full h-full">
-      {!imageLoaded && (
-        <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 animate-pulse" aria-hidden="true" />
-      )}
-      
-      <img
-        src={`${src}?w=400&h=400&fit=crop&q=80`}
-        srcSet={`
-          ${src}?w=200&h=200&fit=crop&q=80 200w,
-          ${src}?w=400&h=400&fit=crop&q=80 400w,
-          ${src}?w=600&h=600&fit=crop&q=80 600w
-        `}
-        sizes="(max-width: 640px) 300px, (max-width: 1024px) 350px, 400px"
-        alt={alt}
-        loading={isLCP ? "eager" : "lazy"}
-        fetchPriority={isLCP ? "high" : "auto"}
-        className={className}
-        onError={() => setImageError(true)}
-        onLoad={() => setImageLoaded(true)}
-        style={{ 
-          opacity: imageLoaded ? 1 : 0,
-          transition: 'opacity 0.3s ease-in-out'
-        }}
-        aria-label={alt}
-      />
-    </div>
-  );
-});
-
-ProductImage.displayName = 'ProductImage';
+import  OptimizedImage from "@/components/ui/optimized-image";
 
 interface OptimizedProductCardProps extends ProductCardProps {
   isLCP?: boolean;
   priority?: boolean;
 }
 
-export const ProductCard = memo(({ 
+const ProductCard = memo(({ 
   product, 
   userAuthenticated,
   isLCP = false,
@@ -101,25 +46,19 @@ export const ProductCard = memo(({
       tabIndex={0}
     >
       <div className="relative aspect-square overflow-hidden" aria-label={`${product.title} ürün görseli`} role="region">
-        {product.images?.[0] ? (
-          <Link 
-            href={`/magaza/${product.id}`}  
-            prefetch={priority}
-            className="w-full h-full block"
-            aria-label={`${product.title} ürün detay sayfası`}
-          >
-            <ProductImage
-              src={product.images[0]}
-              alt={product.title}
-              isLCP={isLCP}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          </Link>
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center" aria-label="Resim Yok" role="img">
-            <Eye className="h-12 w-12 text-muted-foreground" aria-hidden="true" />
-          </div>
-        )}
+        <Link 
+          href={`/magaza/${product.id}`}  
+          prefetch={priority}
+          className="w-full h-full block"
+          aria-label={`${product.title} ürün detay sayfası`}
+        >
+          < OptimizedImage
+            src={product.images?.[0] || ''}
+            alt={product.title}
+            isLCP={isLCP}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </Link>
 
         {/* Featured Badge */}
         {product.featured && (
@@ -242,3 +181,5 @@ export const ProductCard = memo(({
 });
 
 ProductCard.displayName = 'ProductCard';
+
+export default ProductCard;

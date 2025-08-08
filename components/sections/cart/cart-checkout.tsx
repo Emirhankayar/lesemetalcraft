@@ -5,11 +5,12 @@ import { supabase } from "@/lib/sbClient";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Trash2, Loader2, ShoppingCart, Minus, Plus } from "lucide-react";
+import { Loader2, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { AuthAlert } from "@/components/ui/auth-alert";
+import { AuthAlert } from "@/components/alerts/auth-alert";
 import { CartResponse } from "@/lib/types";
-import Image from "next/image";
+import { CartItem } from "@/components/sections/profile/user-cart";
+
 export const CheckoutSection = () => {
   const params = useParams();
   const [cart, setCart] = useState<CartResponse | null>(null);
@@ -133,7 +134,6 @@ export const CheckoutSection = () => {
         return;
       }
 
-  
       setCart((prev) => {
         if (!prev) return prev;
         
@@ -287,106 +287,13 @@ export const CheckoutSection = () => {
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {cart.cart_items.map((item) => (
-            <Card key={item.cart_item_id} className="overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex flex-col sm:flex-row">
-                  {/* Product Image */}
-                  <div className="sm:w-32 sm:h-32 w-full h-48 relative overflow-hidden">
-                                          <Link href={`/magaza/${item.product_id}`}  prefetch={true}>
-
-                    <Image
-                      src={item.product_image || "/placeholder-product.jpg"}
-                      alt={item.product_title}
-                      width={96}
-                      height={96}
-                      className="w-full h-full object-cover"
-                      />
-                      </Link>
-                  </div>
-
-                  {/* Product Details */}
-                  <div className="flex-1 p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-2 line-clamp-2" itemProp="name">
-                          {item.product_title}
-                        </h3>
-                        
-                        <div className="space-y-1 text-sm text-muted-foreground mb-3">
-                          <p>Varyete: {item.variant_data.size}</p>
-                          <p>SKU: {item.variant_data.sku}</p>
-                          {item.variant_stock <= 5 && (
-                            <p className="text-amber-600 font-medium">
-                              Sadece {item.variant_stock} adet kaldı!
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          {/* Quantity Controls */}
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateQuantity(item.cart_item_id, item.quantity - 1)}
-                              disabled={item.quantity <= 1 || itemLoading === item.cart_item_id}
-                              className="h-8 w-8 p-0"
-                              aria-label="Adet Azalt"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            
-                            <span className="font-medium min-w-8 text-center" aria-label="Adet">
-                              {item.quantity}
-                            </span>
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateQuantity(item.cart_item_id, item.quantity + 1)}
-                              disabled={item.quantity >= item.variant_stock || itemLoading === item.cart_item_id}
-                              className="h-8 w-8 p-0"
-                              aria-label="Adet Arttır"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-
-                          {/* Remove Button */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemove(item.cart_item_id)}
-                            disabled={itemLoading === item.cart_item_id}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            aria-label="Sepetten Kaldır"
-                          >
-                            {itemLoading === item.cart_item_id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Trash2 className="h-4 w-4 sm:mr-2" />
-                                <span className="hidden sm:inline">Kaldır</span>
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Price Section */}
-                      <div className="text-right sm:ml-4">
-                        <div className="text-lg font-bold" aria-label="Toplam Fiyat">
-                          {item.line_total.toFixed(2)} ₺
-                        </div>
-                        <div className="text-sm text-muted-foreground" aria-label="Birim Fiyat">
-                          {item.unit_price.toFixed(2)} ₺ / adet
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <CartItem
+              key={item.cart_item_id}
+              item={item}
+              itemLoading={itemLoading}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveFromCart={handleRemove}
+            />
           ))}
         </div>
 

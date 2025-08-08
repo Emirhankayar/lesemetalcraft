@@ -50,11 +50,11 @@ const featureList: FeaturesProps[] = [
   },
 ];
 
-export const FeaturesSection = () => {
+const FeaturesSection = () => {
   return (
-    <section
+    <div
       id="services"
-      className="container py-24 sm:py-32 mx-auto"
+      className="my-32 mx-auto"
       aria-label="Hizmetlerimiz ve Özellikler"
     >
       <h2 className="text-3xl md:text-4xl text-center font-bold mb-4" aria-label="Hizmetlerimiz Başlığı">
@@ -97,6 +97,7 @@ export const FeaturesSection = () => {
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 };
+export default FeaturesSection; 

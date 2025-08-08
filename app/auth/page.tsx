@@ -1,4 +1,4 @@
-import AuthPage from "@/components/layout/auth-page";
+import AuthPage from "@/components/pages/auth/AuthPage";
 
 export const metadata = {
   title: "Giriş Yap - LESE Metalcraft",

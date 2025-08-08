@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { Navbar } from "@/components/layout/navbar";
+import { Navbar } from "@/components/layout/Navbar";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { FooterSection } from "@/components/layout/footer";
+import { FooterSection } from "@/components/layout/Footer";
 import type { Viewport } from "next";
 import QueryProvider from '@/components/providers/query-provider'
 
-// Optimize font loading with display swap
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
@@ -177,7 +176,7 @@ export default function RootLayout({
           >
           <Navbar />
           <main>{children}</main>
-          <div className="my-20">
+          <div className="my-32">
             <FooterSection />
           </div>
         </ThemeProvider>

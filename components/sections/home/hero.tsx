@@ -5,7 +5,7 @@ import { User, Store, Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 
-export const HeroSection = () => {
+const HeroSection = () => {
   const { theme } = useTheme();
 
   return (
@@ -54,33 +54,33 @@ export const HeroSection = () => {
         </p>
 
         {/* Button */}
-        <nav
+        <div
           className="flex flex-col justify-center gap-4 sm:flex-row sm:justify-center sm:gap-8"
           aria-label="Ana eylemler"
         >
           <Link href="/auth" prefetch={true} aria-label="Hesap Oluştur">
-            <Button className="bg-blue-200 font-bold group/arrow" aria-label="Hesap Oluştur">
+            <Button className="bg-blue-400 font-bold group/arrow" aria-label="Hesap Oluştur">
               Hesap Oluştur
               <User className="size-5 ml-2 group-hover/arrow:translate-y-1 transition-transform" aria-hidden="true" />
             </Button>
           </Link>
           <Link href="/magaza" prefetch={true} aria-label="Mağazaya Git">
-            <Button className="bg-pink-200 font-bold group/arrow" aria-label="Mağazaya Git">
+            <Button className="bg-pink-400 font-bold group/arrow" aria-label="Mağazaya Git">
               Mağazaya Git
               <Store className="size-5 ml-2 group-hover/arrow:translate-y-1 transition-transform" aria-hidden="true" />
             </Button>
           </Link>
           <Link href="#contact" aria-label="İletişime Geç">
-            <Button className="bg-green-200 font-bold group/arrow" aria-label="İletişime Geç">
+            <Button className="bg-green-400 font-bold group/arrow" aria-label="İletişime Geç">
               İletişime Geç
               <Send className="size-5 ml-2 group-hover/arrow:translate-y-1 transition-transform" aria-hidden="true" />
             </Button>
           </Link>
-        </nav>
+        </div>
       </div>
 
       {/* Video Section */}
-      <div className="relative group mt-14 w-full  px-4">
+      <div className="relative group mt-14 w-full  px-4 hidden sm:block">
         <div
           className="absolute top-2 lg:-top-8 left-1/2 transform -translate-x-1/2 w-[90%] h-24 lg:h-80 bg-primary/50 rounded-full blur-3xl"
           aria-hidden="true"
@@ -104,3 +104,5 @@ export const HeroSection = () => {
     </section>
   );
 };
+
+export default HeroSection;

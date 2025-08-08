@@ -1,4 +1,4 @@
-import AuthSection from "./sections/auth";
+import AuthSection from "@/components/sections/auth/auth-section";
 export default function AuthPage() {
   return (
     <div className="container">
