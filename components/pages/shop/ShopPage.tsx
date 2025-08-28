@@ -100,7 +100,7 @@ const ShopPageContent = () => {
 
   return (
     <>
-      <PopularProducts maxResults={8} autoplayDelay={3000} />
+            {/*<PopularProducts maxResults={8} autoplayDelay={3000} />*/}
 
       {pagination && totalPages > 1 && (
         <PaginationControls
