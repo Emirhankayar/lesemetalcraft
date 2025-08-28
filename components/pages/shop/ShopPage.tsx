@@ -4,20 +4,33 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useShopProducts } from "@/data/loaders";
 
 import dynamic from "next/dynamic";
-import { PopularProductsSkeleton, ProductCardSkeleton, PaginationControlsSkeleton } from "@/components/alerts/skeletons";
+import {
+  PopularProductsSkeleton,
+  ProductCardSkeleton,
+  PaginationControlsSkeleton,
+} from "@/components/alerts/skeletons";
 
-const PopularProducts = dynamic(() => import("@/components/sections/shop/product-popular-carousel"), {
-  loading: () => <PopularProductsSkeleton />,
-  ssr: false
-});
-const ProductCard = dynamic(() => import("@/components/sections/shop/product-card"), {
-  loading: () => <ProductCardSkeleton />,
-  ssr: false
-});
-const PaginationControls = dynamic(() => import("@/components/sections/shop/pagination-controls"), {
-  loading: () => <PaginationControlsSkeleton />,
-  ssr: false
-});
+const PopularProducts = dynamic(
+  () => import("@/components/sections/shop/product-popular-carousel"),
+  {
+    loading: () => <PopularProductsSkeleton />,
+    ssr: false,
+  },
+);
+const ProductCard = dynamic(
+  () => import("@/components/sections/shop/product-card"),
+  {
+    loading: () => <ProductCardSkeleton />,
+    ssr: false,
+  },
+);
+const PaginationControls = dynamic(
+  () => import("@/components/sections/shop/pagination-controls"),
+  {
+    loading: () => <PaginationControlsSkeleton />,
+    ssr: false,
+  },
+);
 
 const ShopPageContent = () => {
   const router = useRouter();
@@ -25,34 +38,40 @@ const ShopPageContent = () => {
 
   const currentPage = useMemo(
     () => Math.max(0, parseInt(searchParams.get("page") || "1") - 1),
-    [searchParams]
-  );
-  
-  const pageSize = useMemo(
-    () => parseInt(searchParams.get("limit") || "12"),
-    [searchParams]
+    [searchParams],
   );
 
-  const { data: products, isLoading, error } = useShopProducts({ 
-    currentPage, 
-    pageSize 
+  const pageSize = useMemo(
+    () => parseInt(searchParams.get("limit") || "12"),
+    [searchParams],
+  );
+
+  const {
+    data: products,
+    isLoading,
+    error,
+  } = useShopProducts({
+    currentPage,
+    pageSize,
   });
 
   const productsList = products?.products ?? [];
   const pagination = products?.pagination;
   const userAuthenticated = products?.user_authenticated ?? false;
-  const totalPages = pagination ? Math.ceil(pagination.total_count / pageSize) : 0;
+  const totalPages = pagination
+    ? Math.ceil(pagination.total_count / pageSize)
+    : 0;
 
   const updateURL = useCallback(
     (newPage: number, newPageSize?: number) => {
       const params = new URLSearchParams(searchParams);
-      
+
       if (newPage === 0) {
         params.delete("page");
       } else {
         params.set("page", (newPage + 1).toString());
       }
-      
+
       if (newPageSize !== undefined) {
         if (newPageSize === 12) {
           params.delete("limit");
@@ -60,11 +79,13 @@ const ShopPageContent = () => {
           params.set("limit", newPageSize.toString());
         }
       }
-      
-      const newUrl = params.toString() ? `/magaza?${params.toString()}` : "/magaza";
+
+      const newUrl = params.toString()
+        ? `/magaza?${params.toString()}`
+        : "/magaza";
       router.replace(newUrl, { scroll: false });
     },
-    [searchParams, router]
+    [searchParams, router],
   );
 
   const handleNextPage = () => {
@@ -100,9 +121,9 @@ const ShopPageContent = () => {
 
   return (
     <>
-            {/*<PopularProducts maxResults={8} autoplayDelay={3000} />*/}
+      {/*<PopularProducts maxResults={8} autoplayDelay={3000} />*/}
 
-      {pagination && totalPages > 1 && (
+      {pagination && totalPages > 0 && (
         <PaginationControls
           currentPage={currentPage}
           pageSize={pageSize}

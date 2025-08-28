@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Calculator, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState } from "react";
+import { Calculator, Info, ChevronDown, ChevronUp } from "lucide-react";
 
 interface SelectedVariant {
   price?: number;
@@ -18,13 +18,18 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
 }) => {
   const [collapsed, setCollapsed] = useState(collapsedByDefault);
 
-  const basePrice = selectedVariant?.price && quantity ? selectedVariant.price * quantity : 0;
+  const basePrice =
+    selectedVariant?.price && quantity ? selectedVariant.price * quantity : 0;
   const vatAmount = basePrice * 0.2;
   const totalPrice = basePrice + vatAmount;
 
+  const formattedBasePrice = `${basePrice.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`;
+  const formattedVatAmount = `${vatAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`;
+  const formattedTotalPrice = `${totalPrice.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`;
+  const formattedUnitPrice = `${(selectedVariant?.price || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`;
+
   return (
     <div className="rounded-lg border overflow-hidden">
-      {/* Collapsible Header */}
       <button
         type="button"
         className="w-full flex items-center justify-between p-4 bg-muted hover:bg-muted/80 transition rounded-t-lg"
@@ -37,29 +42,23 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
           <span className="font-semibold">Fiyat</span>
         </div>
         <div className="flex items-center gap-4">
-          {/* Animate price fade out when open */}
           <span
             className={`font-bold text-green-600 text-lg transition-all duration-300
               ${!collapsed ? "opacity-0 translate-y-2 pointer-events-none" : "opacity-100 translate-y-0"}
             `}
           >
-            {totalPrice.toFixed(2)} ₺
+            {formattedTotalPrice}
           </span>
 
           <span className="flex items-center gap-1 text-primary font-medium">
             {collapsed ? (
-              <>
-                <ChevronDown className="h-4 w-4" />
-              </>
+              <ChevronDown className="h-4 w-4" />
             ) : (
-              <>
-                <ChevronUp className="h-4 w-4" />
-              </>
+              <ChevronUp className="h-4 w-4" />
             )}
           </span>
         </div>
       </button>
-      {/* Collapsible Content with animation */}
       <div
         id="price-section-details"
         className={`
@@ -75,9 +74,7 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
               <div className="space-y-2">
                 <div className="flex justify-between items-center py-1">
                   <span className="text-sm">Ara Toplam</span>
-                  <span className="font-medium">
-                    {basePrice.toFixed(2)} ₺
-                  </span>
+                  <span className="font-medium">{formattedBasePrice}</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
                   <div className="flex items-center gap-1">
@@ -86,15 +83,13 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
                       %20
                     </span>
                   </div>
-                  <span className="font-medium">
-                    +{vatAmount.toFixed(2)} ₺
-                  </span>
+                  <span className="font-medium">+{formattedVatAmount}</span>
                 </div>
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
                     <span className="font-bold">Toplam</span>
                     <span className="text-xl font-bold text-green-600">
-                      {totalPrice.toFixed(2)} ₺
+                      {formattedTotalPrice}
                     </span>
                   </div>
                 </div>
@@ -106,7 +101,7 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Ara Toplam:</span>
-                    <span className="font-medium">{basePrice.toFixed(2)} ₺</span>
+                    <span className="font-medium">{formattedBasePrice}</span>
                   </div>
                   <div className="flex justify-between">
                     <div className="flex items-center gap-2">
@@ -115,14 +110,14 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
                         %20
                       </span>
                     </div>
-                    <span className="font-medium">+{vatAmount.toFixed(2)} ₺</span>
+                    <span className="font-medium">+{formattedVatAmount}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-end">
                   <div className="text-right">
                     <div className="text-sm mb-1">Toplam</div>
                     <div className="text-2xl font-bold text-green-600">
-                      {totalPrice.toFixed(2)} ₺
+                      {formattedTotalPrice}
                     </div>
                   </div>
                 </div>
@@ -133,7 +128,8 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
                 <div className="flex items-center gap-2 text-xs">
                   <Info className="h-3 w-3" />
                   <span>
-                    {quantity} adet × {selectedVariant?.price?.toFixed(2)} ₺ = {basePrice.toFixed(2)} ₺
+                    {quantity} adet × {formattedUnitPrice} ={" "}
+                    {formattedBasePrice}
                   </span>
                 </div>
               </div>
