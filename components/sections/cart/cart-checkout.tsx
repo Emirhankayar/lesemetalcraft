@@ -40,22 +40,23 @@ export const CheckoutSection = () => {
 
   useEffect(() => {
     const fetchCart = async () => {
-    setLoading(true);
+      setLoading(true);
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-    setUser(user); 
+      setUser(user);
 
-    if (authError || !user) {
-      showAlertMessage("Giriş yapmanız gerekmektedir.");
-      setLoading(false);
-      return;
-    }
+      if (authError || !user) {
+        showAlertMessage("Giriş yapmanız gerekmektedir.");
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.rpc("get_user_cart");
-      
+
       if (error) {
         console.error("Cart fetch error:", error);
         showAlertMessage("Sepet ürünleri yüklenemedi.");
@@ -69,12 +70,11 @@ export const CheckoutSection = () => {
 
   const handleRemove = async (cart_item_id: string) => {
     setItemLoading(cart_item_id);
-    
     try {
       const { error } = await supabase
-        .from('cart_items')
+        .from("cart_items")
         .delete()
-        .eq('id', cart_item_id);
+        .eq("id", cart_item_id);
 
       if (error) {
         console.error("Remove error:", error);
@@ -84,11 +84,15 @@ export const CheckoutSection = () => {
 
       setCart((prev) => {
         if (!prev) return prev;
-        
-        const removedItem = prev.cart_items.find(item => item.cart_item_id === cart_item_id);
+
+        const removedItem = prev.cart_items.find(
+          (item) => item.cart_item_id === cart_item_id
+        );
         if (!removedItem) return prev;
 
-        const newCartItems = prev.cart_items.filter(item => item.cart_item_id !== cart_item_id);
+        const newCartItems = prev.cart_items.filter(
+          (item) => item.cart_item_id !== cart_item_id
+        );
         const newSubtotal = newCartItems.reduce((sum, item) => sum + item.line_total, 0);
         const newTax = newSubtotal * 0.2; // 20% tax
         const newShipping = newSubtotal > 50 ? 0 : 9.99;
@@ -119,14 +123,14 @@ export const CheckoutSection = () => {
 
   const handleUpdateQuantity = async (cart_item_id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    
+
     setItemLoading(cart_item_id);
-    
+
     try {
       const { error } = await supabase
-        .from('cart_items')
+        .from("cart_items")
         .update({ quantity: newQuantity })
-        .eq('id', cart_item_id);
+        .eq("id", cart_item_id);
 
       if (error) {
         console.error("Update quantity error:", error);
@@ -136,8 +140,8 @@ export const CheckoutSection = () => {
 
       setCart((prev) => {
         if (!prev) return prev;
-        
-        const updatedItems = prev.cart_items.map(item => {
+
+        const updatedItems = prev.cart_items.map((item) => {
           if (item.cart_item_id === cart_item_id) {
             const updatedItem = { ...item, quantity: newQuantity, line_total: item.unit_price * newQuantity };
             return updatedItem;
@@ -180,7 +184,7 @@ export const CheckoutSection = () => {
     }
 
     setCheckoutLoading(true);
-    
+
     try {
       const { data, error } = await supabase.rpc("create_order_from_cart");
 
@@ -196,8 +200,10 @@ export const CheckoutSection = () => {
       }
 
       if (data.success) {
-        showAlertMessage(`Sipariş başarıyla oluşturuldu! Sipariş No: ${data.order_id.slice(0, 8)}`);
-        
+        showAlertMessage(
+          `Sipariş başarıyla oluşturuldu! Sipariş No: ${data.order_id.slice(0, 8)}`
+        );
+
         setCart({
           cart_items: [],
           summary: {
@@ -211,7 +217,6 @@ export const CheckoutSection = () => {
         });
 
         // TODO: Redirect to order confirmation page
-        // router.push(`/orders/${data.order_id}`);
       }
     } catch (err) {
       console.error("Unexpected error during checkout:", err);
@@ -220,6 +225,9 @@ export const CheckoutSection = () => {
       setCheckoutLoading(false);
     }
   };
+
+  const formatPrice = (price?: number) =>
+    `${(price || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`;
 
   if (loading) {
     return (
@@ -230,7 +238,12 @@ export const CheckoutSection = () => {
     );
   }
   if (!user) {
-    return <AuthAlert icon={<ShoppingCart/>} description="Alışveriş sepetinizi görüntülemek için lütfen giriş yapın." />;
+    return (
+      <AuthAlert
+        icon={<ShoppingCart />}
+        description="Alışveriş sepetinizi görüntülemek için lütfen giriş yapın."
+      />
+    );
   }
   if (!cart || cart.cart_items.length === 0 || !user) {
     return (
@@ -243,10 +256,8 @@ export const CheckoutSection = () => {
               <p className="text-muted-foreground max-w-md">
                 Harika ürünleri keşfedin ve alışverişe başlamak için sepetinize ekleyin.
               </p>
-              <Link href="/magaza"  prefetch={true}>
-                <Button className="mt-4">
-                  Alışverişe Devam Et
-                </Button>
+              <Link href="/magaza" prefetch={true}>
+                <Button className="mt-4">Alışverişe Devam Et</Button>
               </Link>
             </div>
           </AlertDescription>
@@ -305,37 +316,39 @@ export const CheckoutSection = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Ara Toplam ({cart.summary.items_count} ürün)</span>
-                <span>{cart.summary.subtotal.toFixed(2)} ₺</span>
+                <span className="text-muted-foreground">
+                  Ara Toplam ({cart.summary.items_count} ürün)
+                </span>
+                <span>{formatPrice(cart.summary.subtotal)}</span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-muted-foreground">KDV (20%)</span>
-                <span>{cart.summary.estimated_tax.toFixed(2)} ₺</span>
+                <span>{formatPrice(cart.summary.estimated_tax)}</span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Kargo</span>
                 <span>
                   {cart.summary.shipping_cost === 0 ? (
                     <span className="text-green-600 font-medium">ÜCRETSİZ</span>
                   ) : (
-                    `${cart.summary.shipping_cost.toFixed(2)} ₺`
+                    formatPrice(cart.summary.shipping_cost)
                   )}
                 </span>
               </div>
 
               {cart.summary.subtotal < 50 && cart.summary.shipping_cost > 0 && (
                 <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
-                  💡 Ücretsiz kargo için {(50 - cart.summary.subtotal).toFixed(2)} ₺ daha ekleyin!
+                  💡 Ücretsiz kargo için {formatPrice(50 - cart.summary.subtotal)} daha ekleyin!
                 </div>
               )}
-              
+
               <hr />
-              
+
               <div className="flex justify-between text-lg font-bold">
                 <span>Toplam</span>
-                <span>{cart.total.toFixed(2)} ₺</span>
+                <span>{formatPrice(cart.total)}</span>
               </div>
 
               <div className="text-xs text-muted-foreground space-y-1">
@@ -349,10 +362,10 @@ export const CheckoutSection = () => {
                 </div>
               </div>
             </CardContent>
-            
+
             <CardFooter className="flex flex-col space-y-3">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="w-full"
                 onClick={handleCreateOrder}
                 disabled={checkoutLoading || !cart || cart.cart_items.length === 0}
@@ -367,7 +380,7 @@ export const CheckoutSection = () => {
                   "Siparişi Tamamla"
                 )}
               </Button>
-              <Link href="/magaza"  prefetch={true}>
+              <Link href="/magaza" prefetch={true}>
                 <Button variant="outline" size="sm" className="w-full" aria-label="Alışverişe Devam Et">
                   Alışverişe Devam Et
                 </Button>
@@ -379,3 +392,4 @@ export const CheckoutSection = () => {
     </div>
   );
 };
+
