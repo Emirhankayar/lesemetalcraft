@@ -26,8 +26,7 @@ const ProductCard = memo(
     isLCP = false,
     priority = false,
   }: OptimizedProductCardProps) => {
-    const formattedPrice = `${product.min_price.toLocaleString("tr-TR")} ₺`;
-
+    const formattedPrice = `${(product.min_price ?? 0).toLocaleString("tr-TR")} ₺`;
     const ratingDisplay =
       product.ratings_average > 0
         ? {
