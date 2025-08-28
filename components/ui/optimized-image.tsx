@@ -11,6 +11,8 @@ interface OptimizedImageProps {
   className?: string;
 }
 
+const BLUR_DATA_URL = "data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==";
+
 const OptimizedImage = memo(
   ({
     src,
@@ -28,7 +30,7 @@ const OptimizedImage = memo(
       priority={isLCP}
       className={className}
       placeholder="blur"
-      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAAAAAAB/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AoU7UAgAAAQ"
+      blurDataURL={BLUR_DATA_URL}
       sizes="(max-width: 640px) 300px, (max-width: 1024px) 350px, 400px"
       style={{ objectFit: "cover" }}
     />
@@ -36,5 +38,4 @@ const OptimizedImage = memo(
 );
 
 OptimizedImage.displayName = "OptimizedImage";
-
 export default OptimizedImage;
